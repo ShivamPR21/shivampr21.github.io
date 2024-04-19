@@ -1,0 +1,16 @@
+[
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "Shivam Pandey",
+    "section": "",
+    "text": "Back to top"
+  },
+  {
+    "objectID": "about.html",
+    "href": "about.html",
+    "title": "About",
+    "section": "",
+    "text": "I’m interested in near infinite context learning (subdomain of GenAI), along with explainablity and especially in the generalization through better optimization. The main reason of my interest in this area is the challenge have two axis of improvements, software and algorithmic, and this also includes redefining gradients compuation and backprop strategies.\nI’ve been working on optimal implementations of LLMs, through the ML compiler advancements, fused with higher level languages to define lower level kernel where the complexity of the mathematical formulation of gradient computation explodes, and I would like to continue on that direction but now in a more RNN like implementations (Mamba, Linear Attention etc.).\n\n\n\n Back to top"
+  }
+]
