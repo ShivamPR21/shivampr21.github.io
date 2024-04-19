@@ -1,3 +1,13 @@
 ---
 title: "Shivam Pandey"
 ---
+
+::: {.columns}
+::: {.column width="70%"}
+Hey, thanks for visiting this site, I'm **Shivam Pandey** a tech enthusiast chasing the goal of infinite context learning. My work mainly revolves around explainable AI with a special focus on emperical and theoterical guarantees of optimzation.
+:::
+::: {.column width="30%"}
+![](/logo.png)
+:::
+:::
+ <!-- end columns -->
