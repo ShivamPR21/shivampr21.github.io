@@ -1,0 +1,35 @@
+project:
+  type: website
+
+website:
+  title: "ShivamPR21"
+  site-url: https://shivampr21.github.io
+  page-footer: "Copyright 2024, Shivam Pandey @ShivamPR21"
+  back-to-top-navigation: true
+  reader-mode: true
+  twitter-card:
+    creator: "@ShivamPR21"
+    site: "@ShivamPR21"
+  open-graph: true
+  navbar:
+    left:
+      - href: index.qmd
+        text: Home
+      - about.qmd
+    right:
+      - icon: twitter
+        href: https://twitter.com/shivampr21
+      - icon: github
+        href: https://github.com/shivampr21
+      - icon: linkedin
+        href: https://linkedin.com/in/shivampr21
+
+
+format:
+  html:
+    theme: journal
+    css: styles.css
+    toc: true
+
+
+
