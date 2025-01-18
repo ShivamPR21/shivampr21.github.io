@@ -2,6 +2,11 @@
 title: "About"
 ---
 
-I'm interested in near infinite context learning (subdomain of GenAI), along with explainablity and especially in the generalization through better optimization. The main reason of my interest in this area is the challenge have two axis of improvements, software and algorithmic, and this also includes redefining gradients compuation and backprop strategies.
+Hey, thanks for visiting this site, I’m **Shivam Pandey** a tech exploring the directions to make AI explainable and generalize over every task with minimal data sample.
 
-I've been working on optimal implementations of LLMs, through the ML compiler advancements, fused with higher level languages to define lower level kernel where the complexity of the mathematical formulation of gradient computation explodes, and I would like to continue on that direction but now in a more RNN like implementations (Mamba, Linear Attention etc.).
+## Research Orientation: *[WIP]*
+Large blob of Compute with a-lot of data will always win but it still remains data-inefficient and lacks generalization thus can't be accounted for intelligence.
+
+<!-- Reasoning with LLMs seems hard, because of their lack of generalization and ability to understand the underlying abstraction of the world. Obviously we have witnessed some of what we can call a reasoning behavior from LLMs agents distilled from large pre-training and further improved with RL for reward maximization. -->
+<!-- that are now looking into another scaling direction of test-time-compute,  -->
+

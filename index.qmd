@@ -4,10 +4,13 @@ title: "Shivam Pandey"
 
 ::: {.columns}
 ::: {.column width="70%"}
-Hey, thanks for visiting this site, I'm **Shivam Pandey** a tech enthusiast chasing the goal of infinite context learning. My work mainly revolves around explainable AI with a special focus on emperical and theoterical guarantees of optimzation.
+Hey, thanks for visiting this page, I’m **Shivam Pandey** a tech exploring the directions to make AI explainable and generalize over every task with minimal data sample.
+
+## Research Orientation: *[WIP]*
+Large blob of Compute with a-lot of data will always win but it still remains data-inefficient and lacks generalization thus can't be accounted for intelligence.
 :::
 ::: {.column width="30%"}
-![](/logo.png)
+![](/pandey3.jpg)
 :::
 :::
  <!-- end columns -->
