@@ -4,13 +4,27 @@
     "href": "index.html",
     "title": "Shivam Pandey",
     "section": "",
-    "text": "Hey, thanks for visiting this site, I’m Shivam Pandey a tech enthusiast chasing the goal of infinite context learning. My work mainly revolves around explainable AI with a special focus on emperical and theoterical guarantees of optimzation.\n\n\n\n\n\n\n\n\n Back to top"
+    "text": "Hey, thanks for visiting this page, I’m Shivam Pandey a tech exploring the directions to make AI explainable and generalize over every task with minimal data sample.\n\n\nLarge blob of Compute with a-lot of data will always win but it still remains data-inefficient and lacks generalization thus can’t be accounted for intelligence."
+  },
+  {
+    "objectID": "index.html#research-orientation-wip",
+    "href": "index.html#research-orientation-wip",
+    "title": "Shivam Pandey",
+    "section": "",
+    "text": "Large blob of Compute with a-lot of data will always win but it still remains data-inefficient and lacks generalization thus can’t be accounted for intelligence."
   },
   {
     "objectID": "about.html",
     "href": "about.html",
     "title": "About",
     "section": "",
-    "text": "I’m interested in near infinite context learning (subdomain of GenAI), along with explainablity and especially in the generalization through better optimization. The main reason of my interest in this area is the challenge have two axis of improvements, software and algorithmic, and this also includes redefining gradients compuation and backprop strategies.\nI’ve been working on optimal implementations of LLMs, through the ML compiler advancements, fused with higher level languages to define lower level kernel where the complexity of the mathematical formulation of gradient computation explodes, and I would like to continue on that direction but now in a more RNN like implementations (Mamba, Linear Attention etc.).\n\n\n\n Back to top"
+    "text": "Hey, thanks for visiting this site, I’m Shivam Pandey a tech exploring the directions to make AI explainable and generalize over every task with minimal data sample."
+  },
+  {
+    "objectID": "about.html#research-orientation-wip",
+    "href": "about.html#research-orientation-wip",
+    "title": "About",
+    "section": "Research Orientation: [WIP]",
+    "text": "Research Orientation: [WIP]\nLarge blob of Compute with a-lot of data will always win but it still remains data-inefficient and lacks generalization thus can’t be accounted for intelligence."
   }
 ]
