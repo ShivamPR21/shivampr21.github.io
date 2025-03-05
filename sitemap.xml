@@ -1,11 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
+    <loc>https://shivampr21.github.io/posts/softmax-30-1-2025-kernelized/index.html</loc>
+    <lastmod>2025-01-29T19:13:33.688Z</lastmod>
+  </url>
+  <url>
     <loc>https://shivampr21.github.io/index.html</loc>
-    <lastmod>2025-01-18T10:58:53.086Z</lastmod>
+    <lastmod>2025-03-05T10:16:36.706Z</lastmod>
   </url>
   <url>
     <loc>https://shivampr21.github.io/about.html</loc>
     <lastmod>2025-01-18T10:59:40.517Z</lastmod>
+  </url>
+  <url>
+    <loc>https://shivampr21.github.io/kernelized.html</loc>
+    <lastmod>2025-01-29T18:59:35.771Z</lastmod>
   </url>
 </urlset>

@@ -6,8 +6,10 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
+<meta name="author" content="Shivam Pandey">
+<meta name="dcterms.date" content="2025-01-30">
 
-<title>Shivam Pandey – ShivamPR21</title>
+<title>SoftMax Kernel: Forward and Backward – ShivamPR21</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -23,23 +25,23 @@ ul.task-list li input[type="checkbox"] {
 </style>
 
 
-<script src="site_libs/quarto-nav/quarto-nav.js"></script>
-<script src="site_libs/quarto-nav/headroom.min.js"></script>
-<script src="site_libs/clipboard/clipboard.min.js"></script>
-<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
-<script src="site_libs/quarto-search/fuse.min.js"></script>
-<script src="site_libs/quarto-search/quarto-search.js"></script>
-<meta name="quarto:offset" content="./">
-<link href=".//logo.png" rel="icon" type="image/png">
-<script src="site_libs/quarto-html/quarto.js"></script>
-<script src="site_libs/quarto-html/popper.min.js"></script>
-<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
-<script src="site_libs/quarto-html/anchor.min.js"></script>
-<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="site_libs/quarto-html/quarto-syntax-highlighting-01c78b5cd655e4cd89133cf59d535862.css" rel="stylesheet" id="quarto-text-highlighting-styles">
-<script src="site_libs/bootstrap/bootstrap.min.js"></script>
-<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="site_libs/bootstrap/bootstrap-9c08254e6c7f628c35df093bdfb7502b.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<link href="../..//logo.png" rel="icon" type="image/png">
+<script src="../../site_libs/quarto-html/quarto.js"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-01c78b5cd655e4cd89133cf59d535862.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-9c08254e6c7f628c35df093bdfb7502b.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -69,15 +71,13 @@ ul.task-list li input[type="checkbox"] {
 }</script>
 
 
-<link rel="stylesheet" href="styles.css">
-<meta property="og:title" content="Shivam Pandey – ShivamPR21">
-<meta property="og:image" content="https://shivampr21.github.io/pandey3.jpg">
+<link rel="stylesheet" href="../../styles.css">
+<meta property="og:title" content="SoftMax Kernel: Forward and Backward – ShivamPR21">
 <meta property="og:site_name" content="ShivamPR21">
-<meta name="twitter:title" content="Shivam Pandey – ShivamPR21">
-<meta name="twitter:image" content="https://shivampr21.github.io/pandey3.jpg">
+<meta name="twitter:title" content="SoftMax Kernel: Forward and Backward – ShivamPR21">
 <meta name="twitter:creator" content="@ShivamPR21">
 <meta name="twitter:site" content="@ShivamPR21">
-<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:card" content="summary">
 </head>
 
 <body class="nav-fixed">
@@ -87,7 +87,7 @@ ul.task-list li input[type="checkbox"] {
     <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
       <div class="navbar-container container-fluid">
       <div class="navbar-brand-container mx-auto">
-    <a class="navbar-brand" href="./index.html">
+    <a class="navbar-brand" href="../../index.html">
     <span class="navbar-title">ShivamPR21</span>
     </a>
   </div>
@@ -98,11 +98,11 @@ ul.task-list li input[type="checkbox"] {
           <div class="collapse navbar-collapse" id="navbarCollapse">
             <ul class="navbar-nav navbar-nav-scroll me-auto">
   <li class="nav-item">
-    <a class="nav-link active" href="./index.html" aria-current="page"> 
+    <a class="nav-link" href="../../index.html"> 
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="./kernelized.html"> 
+    <a class="nav-link" href="../../kernelized.html"> 
 <span class="menu-text">KERNELIZED</span></a>
   </li>  
 </ul>
@@ -146,14 +146,31 @@ ul.task-list li input[type="checkbox"] {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Shivam Pandey</h1>
-</div>
+<h1 class="title">SoftMax Kernel: Forward and Backward</h1>
+  <div class="quarto-categories">
+    <div class="quarto-category">Autograd</div>
+    <div class="quarto-category">Triton</div>
+    <div class="quarto-category">CUDA</div>
+  </div>
+  </div>
 
 
 
 <div class="quarto-title-meta">
 
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Shivam Pandey </p>
+          </div>
+  </div>
     
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">January 30, 2025</p>
+    </div>
+  </div>
   
     
   </div>
@@ -163,21 +180,6 @@ ul.task-list li input[type="checkbox"] {
 </header>
 
 
-<div class="columns">
-<div class="column" style="width:70%;">
-<p>Welcome to my site! I’m <strong>Shivam Pandey</strong>, a tech explorer dedicated to advancing <em>AI’s explainability and its ability to generalize across tasks with minimal data</em>.</p>
-<section id="research-orientation-wip" class="level2">
-<h2 class="anchored" data-anchor-id="research-orientation-wip">Research Orientation: <em>[WIP]</em></h2>
-<p><strong>Scaling computes, not comprehension.</strong></p>
-<blockquote class="blockquote">
-<p>Even massive compute and oceans of data only deliver brute-force wins—they scale performance, not true insight. These systems remain data inefficient and fail to generalize, missing the mark on real intelligence.</p>
-</blockquote>
-</section>
-</div><div class="column" style="width:30%;">
-<p><img src="./pandey3.jpg" class="img-fluid"></p>
-</div>
-</div>
-<p><!-- end columns --></p>
 
 
 
