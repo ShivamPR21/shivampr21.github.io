@@ -4,10 +4,14 @@ title: "Shivam Pandey"
 
 ::: {.columns}
 ::: {.column width="70%"}
-Hey, thanks for visiting this page, I’m **Shivam Pandey** a tech exploring the directions to make AI explainable and generalize over every task with minimal data sample.
+Welcome to my site! I'm **Shivam Pandey**, a tech explorer dedicated to advancing *AI's explainability and its ability to generalize across tasks with minimal data*.
 
 ## Research Orientation: *[WIP]*
-Large blob of Compute with a-lot of data will always win but it still remains data-inefficient and lacks generalization thus can't be accounted for intelligence.
+**Scaling computes, not comprehension.**
+
+> Even massive compute and oceans of data only deliver brute-force wins—they scale performance, not true insight. These systems remain data inefficient and fail to generalize, missing the mark on real intelligence.
+
+Currently I'm working on **Quantifying the Intelligence-Compute Decoupling in Modern AI Systems**.
 :::
 ::: {.column width="30%"}
 ![](/pandey3.jpg)
