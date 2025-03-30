@@ -60,7 +60,7 @@
     "href": "kernelized.html",
     "title": "KERNELIZED",
     "section": "",
-    "text": "Max Kernel: Forward and Backward Pass (MATH)\n\n\n\n\n\n\nMax\n\n\nAutograd\n\n\nMATH\n\n\nTriton\n\n\nCUDA\n\n\n\n\n\n\n\n\n\nMar 30, 2025\n\n\nShivam Pandey\n\n\n\n\n\n\n\n\n\n\n\n\nSoftMax Kernel: Forward and Backward Pass (MATH)\n\n\n\n\n\n\nSoftmax\n\n\nAutograd\n\n\nMATH\n\n\nTriton\n\n\nCUDA\n\n\n\n\n\n\n\n\n\nMar 30, 2025\n\n\nShivam Pandey\n\n\n\n\n\n\n\n\n\n\n\n\nFlashAttention Kernel: Forward Pass (MATH)\n\n\n\n\n\n\nFlashAttention\n\n\nTransformers\n\n\nAttention\n\n\nAutograd\n\n\nMATH\n\n\n\n\n\n\n\n\n\nMar 30, 2025\n\n\nShivam Pandey\n\n\n\n\n\n\n\n\n\n\n\n\nFlashAttention Kernel: Backward Pass (MATH)\n\n\n\n\n\n\nFlashAttention\n\n\nTransformers\n\n\nAttention\n\n\nAutograd\n\n\nMATH\n\n\n\n\n\n\n\n\n\nMar 30, 2025\n\n\nShivam Pandey\n\n\n\n\n\n\nNo matching items\n\n Back to top"
+    "text": "Max Kernel: Forward and Backward Pass (MATH)\n\n\n\n\n\n\nAI\n\n\nCompute\n\n\nAutograd\n\n\nMATH\n\n\n\n\n\n\n\n\n\nMar 30, 2025\n\n\nShivam Pandey\n\n\n\n\n\n\n\n\n\n\n\n\nSoftMax Kernel: Forward and Backward Pass (MATH)\n\n\n\n\n\n\nAI\n\n\nCompute\n\n\nAutograd\n\n\nMATH\n\n\n\n\n\n\n\n\n\nMar 30, 2025\n\n\nShivam Pandey\n\n\n\n\n\n\n\n\n\n\n\n\nFlashAttention Kernel: Forward Pass (MATH)\n\n\n\n\n\n\nFlashAttention\n\n\nTransformers\n\n\nAttention\n\n\nCompute\n\n\nAutograd\n\n\nMATH\n\n\n\n\n\n\n\n\n\nMar 30, 2025\n\n\nShivam Pandey\n\n\n\n\n\n\n\n\n\n\n\n\nFlashAttention Kernel: Backward Pass (MATH)\n\n\n\n\n\n\nFlashAttention\n\n\nTransformers\n\n\nAttention\n\n\nCompute\n\n\nAutograd\n\n\nMATH\n\n\n\n\n\n\n\n\n\nMar 30, 2025\n\n\nShivam Pandey\n\n\n\n\n\n\nNo matching items\n\n Back to top"
   },
   {
     "objectID": "about.html",

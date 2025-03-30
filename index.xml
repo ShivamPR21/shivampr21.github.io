@@ -61,11 +61,10 @@
 </section>
 
 <a onclick="window.scrollTo(0, 0); return false;" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a> ]]></description>
-  <category>Max</category>
+  <category>AI</category>
+  <category>Compute</category>
   <category>Autograd</category>
   <category>MATH</category>
-  <category>Triton</category>
-  <category>CUDA</category>
   <guid>https://shivampr21.github.io/posts/max-30-3-2025-kernelized/</guid>
   <pubDate>Sat, 29 Mar 2025 18:30:00 GMT</pubDate>
 </item>
@@ -155,11 +154,10 @@
 </section>
 
 <a onclick="window.scrollTo(0, 0); return false;" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a> ]]></description>
-  <category>Softmax</category>
+  <category>AI</category>
+  <category>Compute</category>
   <category>Autograd</category>
   <category>MATH</category>
-  <category>Triton</category>
-  <category>CUDA</category>
   <guid>https://shivampr21.github.io/posts/softmax-30-3-2025-kernelized/</guid>
   <pubDate>Sat, 29 Mar 2025 18:30:00 GMT</pubDate>
 </item>
@@ -221,6 +219,7 @@
   <category>FlashAttention</category>
   <category>Transformers</category>
   <category>Attention</category>
+  <category>Compute</category>
   <category>Autograd</category>
   <category>MATH</category>
   <guid>https://shivampr21.github.io/posts/flash-30-3-2025-kernelized/</guid>
@@ -323,6 +322,7 @@
   <category>FlashAttention</category>
   <category>Transformers</category>
   <category>Attention</category>
+  <category>Compute</category>
   <category>Autograd</category>
   <category>MATH</category>
   <guid>https://shivampr21.github.io/posts/flash-bwd-30-3-2025-kernelized/</guid>
