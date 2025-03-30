@@ -74,7 +74,7 @@
     "href": "index.html",
     "title": "Shivam Pandey",
     "section": "",
-    "text": "Welcome to my site! I’m Shivam Pandey, a tech explorer dedicated to advancing AI’s explainability and its ability to generalize across tasks with minimal data.\n\n\nScaling computes, not comprehension.\n\nEven massive compute and oceans of data only deliver brute-force wins—they scale performance, not true insight. These systems remain data inefficient and fail to generalize, missing the mark on real intelligence.\n\nCurrently I’m working on Quantifying the Intelligence-Compute Decoupling in Modern AI Systems."
+    "text": "Welcome to my site! I’m Shivam Pandey, a tech explorer dedicated to advancing AI’s explainability and its ability to generalize across tasks with minimal data.\n\n\nScaling computes, not comprehension.\n\nEven massive compute and oceans of data only deliver brute-force wins—they scale performance, not true insight. These systems remain data inefficient and fail to generalize, missing the mark on real intelligence.\n\nCurrently I’m working on Quantifying the Intelligence-Compute Decoupling in Modern AI Systems.\n\n\n\nKERNELIZED is a blog series around exploring the territory of Modern Compute for AI from both algorithmic and infrastructure point of view. Some of the initial goal for this blog series includes:\n\nEasy scaling of new AI algorithms to modern compute hardware (e.g. GPU, TPU, WSE etc.)\nExplore and not Rush: The blogs should be exploratory i.e. instead of providing best practices, it enables the way to there by not hindering the potential of the information to be applied to other algorithms.\nThe blogs are \\(\\mu\\)-BLOGS: Read time should not exceed more than 10 minutes. This particular requirement comes from my personal experience that longer blogs/write-ups hinder information sharing no matter how good it is written.\n\n\n\n\nAnother blog series will soon be released targeting AI Explainability and AI Security, where the target will be breaking down AI models to their core logic and using that information to assess potential security issues.\nKeep Checking this page for further updates as the Code analysis and implementation are dropping next in KERNELIZED series, and other upcoming projects."
   },
   {
     "objectID": "index.html#research-orientation-wip",
@@ -82,6 +82,20 @@
     "title": "Shivam Pandey",
     "section": "",
     "text": "Scaling computes, not comprehension.\n\nEven massive compute and oceans of data only deliver brute-force wins—they scale performance, not true insight. These systems remain data inefficient and fail to generalize, missing the mark on real intelligence.\n\nCurrently I’m working on Quantifying the Intelligence-Compute Decoupling in Modern AI Systems."
+  },
+  {
+    "objectID": "index.html#kernelized",
+    "href": "index.html#kernelized",
+    "title": "Shivam Pandey",
+    "section": "",
+    "text": "KERNELIZED is a blog series around exploring the territory of Modern Compute for AI from both algorithmic and infrastructure point of view. Some of the initial goal for this blog series includes:\n\nEasy scaling of new AI algorithms to modern compute hardware (e.g. GPU, TPU, WSE etc.)\nExplore and not Rush: The blogs should be exploratory i.e. instead of providing best practices, it enables the way to there by not hindering the potential of the information to be applied to other algorithms.\nThe blogs are \\(\\mu\\)-BLOGS: Read time should not exceed more than 10 minutes. This particular requirement comes from my personal experience that longer blogs/write-ups hinder information sharing no matter how good it is written."
+  },
+  {
+    "objectID": "index.html#next",
+    "href": "index.html#next",
+    "title": "Shivam Pandey",
+    "section": "",
+    "text": "Another blog series will soon be released targeting AI Explainability and AI Security, where the target will be breaking down AI models to their core logic and using that information to assess potential security issues.\nKeep Checking this page for further updates as the Code analysis and implementation are dropping next in KERNELIZED series, and other upcoming projects."
   },
   {
     "objectID": "posts/max-30-3-2025-kernelized/index.html",
