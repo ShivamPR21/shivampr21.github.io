@@ -1,19 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://shivampr21.github.io/posts/softmax-30-1-2025-kernelized/index.html</loc>
-    <lastmod>2025-01-29T19:13:33.688Z</lastmod>
+    <loc>https://shivampr21.github.io/posts/flash-bwd-30-3-2025-kernelized/index.html</loc>
+    <lastmod>2025-03-30T06:56:48.455Z</lastmod>
   </url>
   <url>
-    <loc>https://shivampr21.github.io/index.html</loc>
-    <lastmod>2025-03-05T10:16:36.706Z</lastmod>
+    <loc>https://shivampr21.github.io/posts/softmax-30-3-2025-kernelized/index.html</loc>
+    <lastmod>2025-03-30T06:34:41.725Z</lastmod>
+  </url>
+  <url>
+    <loc>https://shivampr21.github.io/kernelized.html</loc>
+    <lastmod>2025-03-30T06:27:43.578Z</lastmod>
   </url>
   <url>
     <loc>https://shivampr21.github.io/about.html</loc>
     <lastmod>2025-01-18T10:59:40.517Z</lastmod>
   </url>
   <url>
-    <loc>https://shivampr21.github.io/kernelized.html</loc>
-    <lastmod>2025-01-29T18:59:35.771Z</lastmod>
+    <loc>https://shivampr21.github.io/index.html</loc>
+    <lastmod>2025-03-05T11:00:47.155Z</lastmod>
+  </url>
+  <url>
+    <loc>https://shivampr21.github.io/posts/max-30-3-2025-kernelized/index.html</loc>
+    <lastmod>2025-03-30T06:37:01.500Z</lastmod>
+  </url>
+  <url>
+    <loc>https://shivampr21.github.io/posts/flash-30-3-2025-kernelized/index.html</loc>
+    <lastmod>2025-03-30T06:41:03.246Z</lastmod>
   </url>
 </urlset>

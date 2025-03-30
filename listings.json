@@ -2,7 +2,10 @@
   {
     "listing": "/kernelized.html",
     "items": [
-      "/posts/softmax-30-1-2025-kernelized/index.html"
+      "/posts/max-30-3-2025-kernelized/index.html",
+      "/posts/softmax-30-3-2025-kernelized/index.html",
+      "/posts/flash-30-3-2025-kernelized/index.html",
+      "/posts/flash-bwd-30-3-2025-kernelized/index.html"
     ]
   }
 ]

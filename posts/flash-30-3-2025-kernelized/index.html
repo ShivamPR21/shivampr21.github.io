@@ -7,9 +7,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Shivam Pandey">
-<meta name="dcterms.date" content="2025-01-30">
+<meta name="dcterms.date" content="2025-03-30">
 
-<title>SoftMax Kernel: Forward and Backward Pass (MATH) – ShivamPR21</title>
+<title>FlashAttention Kernel: Forward Pass (MATH) – ShivamPR21</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -101,10 +101,10 @@ window.Quarto = {
 </script>
 
 <link rel="stylesheet" href="../../styles.css">
-<meta property="og:title" content="SoftMax Kernel: Forward and Backward Pass (MATH) – ShivamPR21">
+<meta property="og:title" content="FlashAttention Kernel: Forward Pass (MATH) – ShivamPR21">
 <meta property="og:description" content="">
 <meta property="og:site_name" content="ShivamPR21">
-<meta name="twitter:title" content="SoftMax Kernel: Forward and Backward Pass (MATH) – ShivamPR21">
+<meta name="twitter:title" content="FlashAttention Kernel: Forward Pass (MATH) – ShivamPR21">
 <meta name="twitter:description" content="">
 <meta name="twitter:creator" content="@ShivamPR21">
 <meta name="twitter:site" content="@ShivamPR21">
@@ -174,20 +174,9 @@ window.Quarto = {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#softmax-operation" id="toc-softmax-operation" class="nav-link active" data-scroll-target="#softmax-operation">Softmax Operation</a>
+  <li><a href="#attention-operation" id="toc-attention-operation" class="nav-link active" data-scroll-target="#attention-operation">Attention Operation</a>
   <ul class="collapse">
-  <li><a href="#intermediate-result-1" id="toc-intermediate-result-1" class="nav-link" data-scroll-target="#intermediate-result-1">Intermediate Result: #1</a></li>
-  <li><a href="#intermediate-result-2" id="toc-intermediate-result-2" class="nav-link" data-scroll-target="#intermediate-result-2">Intermediate Result: #2</a></li>
-  <li><a href="#softmax" id="toc-softmax" class="nav-link" data-scroll-target="#softmax">Softmax:</a></li>
-  </ul></li>
-  <li><a href="#backward-pass" id="toc-backward-pass" class="nav-link" data-scroll-target="#backward-pass">Backward Pass:</a>
-  <ul class="collapse">
-  <li><a href="#derivation" id="toc-derivation" class="nav-link" data-scroll-target="#derivation">Derivation:</a></li>
-  </ul></li>
-  <li><a href="#application-in-attention-specialize-the-expressions" id="toc-application-in-attention-specialize-the-expressions" class="nav-link" data-scroll-target="#application-in-attention-specialize-the-expressions">Application in Attention: Specialize the Expressions</a>
-  <ul class="collapse">
-  <li><a href="#setup" id="toc-setup" class="nav-link" data-scroll-target="#setup">Setup:</a></li>
-  <li><a href="#differentiation" id="toc-differentiation" class="nav-link" data-scroll-target="#differentiation">Differentiation:</a></li>
+  <li><a href="#simplifying-forward-pass" id="toc-simplifying-forward-pass" class="nav-link" data-scroll-target="#simplifying-forward-pass">Simplifying Forward Pass</a></li>
   </ul></li>
   </ul>
 </nav>
@@ -197,13 +186,13 @@ window.Quarto = {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">SoftMax Kernel: Forward and Backward Pass (MATH)</h1>
+<h1 class="title">FlashAttention Kernel: Forward Pass (MATH)</h1>
   <div class="quarto-categories">
-    <div class="quarto-category">Softmax</div>
+    <div class="quarto-category">FlashAttention</div>
+    <div class="quarto-category">Transformers</div>
+    <div class="quarto-category">Attention</div>
     <div class="quarto-category">Autograd</div>
     <div class="quarto-category">MATH</div>
-    <div class="quarto-category">Triton</div>
-    <div class="quarto-category">CUDA</div>
   </div>
   </div>
 
@@ -221,7 +210,7 @@ window.Quarto = {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">January 30, 2025</p>
+      <p class="date">March 30, 2025</p>
     </div>
   </div>
   
@@ -233,128 +222,84 @@ window.Quarto = {
 </header>
 
 
-<!-- # Softmax Kernel: Math & Implementation -->
+<!-- # Flash Attention Kernel: Math & Implementation -->
 <ul>
 <li><p><span class="math inline">\(A \in \mathbb{R}^{s_2 s_1}\)</span> where <span class="math inline">\(s_2\)</span> and <span class="math inline">\(s_1\)</span> are the index set, for example in a 5D tensor <span class="math inline">\(A \in \mathbb{R}^{ijklm}\)</span> a possible index set could be <span class="math inline">\(s_2 = \{ i, j \}\)</span> and <span class="math inline">\(s_1 = \{k, l, m \}\)</span>.</p></li>
-<li><p><span class="math inline">\(B_{s_2 s_1} = softmax_{s_1}(A_{s_2 s_1})\)</span> is a softmax operation over s1 index set of A, and the resulting index set still remains same as A <em>s.t.</em> <span class="math inline">\(B \in \mathbb{R}^{s2s1}\)</span></p></li>
+<li><p><span class="math inline">\(B_{s_2 s_1} = flash_{s_1}(Q_{s_2 s_1}, K_{s_3 s_1}, V_{s_3 s_1})\)</span> is a <strong>flash attention</strong> operation over <strong>s1 index set of tensor set <span class="math inline">\(&lt;Q, K, V&gt;\)</span></strong>, and the resulting index set is the index set of <span class="math inline">\(Q\)</span> <em>s.t.</em> <span class="math inline">\(B \in \mathbb{R}^{s_2 s_1}\)</span></p></li>
 </ul>
-<section id="softmax-operation" class="level2">
-<h2 class="anchored" data-anchor-id="softmax-operation">Softmax Operation</h2>
-<p><span class="math display">\[\begin{equation}
-B_{s_2 s_1} = softmax_{s_1}(A_{s_2 s_1})
-\end{equation}\]</span></p>
-<section id="intermediate-result-1" class="level3">
-<h3 class="anchored" data-anchor-id="intermediate-result-1">Intermediate Result: #1</h3>
-<p><span class="math display">\[\begin{equation}
-I^1_{s_2 s_1} = \exp{(A_{s_2 s_1})}
-\end{equation}\]</span></p>
-</section>
-<section id="intermediate-result-2" class="level3">
-<h3 class="anchored" data-anchor-id="intermediate-result-2">Intermediate Result: #2</h3>
-<p><span class="math display">\[\begin{equation}
-I^2_{s_2} = \sum_{s1}I^1_{s_2 s_1}
-\end{equation}\]</span></p>
-</section>
-<section id="softmax" class="level3">
-<h3 class="anchored" data-anchor-id="softmax">Softmax:</h3>
-<p><span class="math display">\[\begin{equation}
-B_{s_2 s_1} = \frac{I^1_{s_2 s_1}}{I^2_{s_2}} = \frac{\exp{(A_{s_2 s_1})}}{\sum_{s1}\exp{(A_{s_2 s_1})}}
-\end{equation}\]</span></p>
-</section>
-</section>
-<section id="backward-pass" class="level2">
-<h2 class="anchored" data-anchor-id="backward-pass">Backward Pass:</h2>
-<p>Here we will just look at the backward pass of the softmax kernel alone, as it will help us understand a much wider concept of having a <strong>multidimensional loss function</strong> instead of a <strong>scalar loss</strong>.</p>
-<p>Fortunately this also simplifies the problem for us as we won’t have to account for any pullbacks for the output <span class="math inline">\(B_{s_2 s_1}\)</span> itself.</p>
-<p><span class="math display">\[\begin{equation}
-\frac{\partial B_{s_2 s_1}}{\partial A_{s'_2 s'_1}} \in \mathbb{R}^{s_2 s_1 s'_2 s'_1}
-\end{equation}\]</span></p>
-<section id="derivation" class="level3">
-<h3 class="anchored" data-anchor-id="derivation">Derivation:</h3>
-<p><span class="math display">\[\begin{align}
-\frac{\partial B_{s_2 s_1}}{\partial A_{s'_2 s'_1}} = \frac{1}{\sum_{s_1}\exp{(A_{s_2 s_1})}} \frac{\partial \exp{(A_{s_2 s_1})}}{\partial A_{s'_2 s'_1}} + \exp(A_{s_2 s_1})\frac{\partial \sum_{s_1} 1/exp(A_{s_2 s_1})}{\partial A_{s'_2 s'_1}}
-\end{align}\]</span></p>
-<hr>
-<p><span class="math display">\[\begin{align}
-\frac{1}{\sum_{s_1}\exp{(A_{s_2 s_1})}} \frac{\partial \exp{(A_{s_2 s_1})}}{\partial A_{s'_2 s'_1}} = \frac{\exp(A_{s_2 s_1})}{\sum_{s_1}\exp{(A_{s_2 s_1})}} \frac{A_{s_2 s_1}}{A_{s'_2 s'_1}} = \frac{\exp(A_{s_2 s_1})}{\sum_{s_1}\exp{(A_{s_2 s_1})}} \mathbb{1}_{(s_2 s_1) = (s'_2 s'_1)}
-\end{align}\]</span></p>
-<hr>
-<p><span class="math display">\[\begin{equation}
-\exp(A_{s_2 s_1})\frac{\partial \sum_{s_1} 1/exp(A_{s_2 s_1})}{\partial A_{s'_2 s'_1}} = -\frac{\exp(A_{s_2 s_1})}{[\sum_{s_1} exp(A_{s_2 s_1})]^2} \frac{\partial \sum_{s_1} \exp(A_{s_2 s_1})}{\partial A_{s'_2 s'_1}}
-\end{equation}\]</span></p>
-<p><span class="math display">\[\begin{align}
-\frac{\partial \sum_{s_1} \exp(A_{s_2 s_1})}{\partial A_{s'_2 s'_1}} = \sum_{s_1} \frac{\partial \exp(A_{s_2 s_1})}{\partial A_{s'_2 s'_1}} = \sum_{s_1} \exp(A_{s_2 s_1}) \frac{\partial A_{s_2 s_1}}{\partial A_{s'_2 s'_1}} \\ = \sum_{s_1} \exp(A_{s_2 s_1}) \mathbb{1}_{(s_2 s_1) = (s'_2 s'_1)} = \exp(A_{s_2 s'_1}) \mathbb{1}_{s_2 = s'_2}
-\end{align}\]</span></p>
-<hr>
-<section id="final-derivative-simplification" class="level4">
-<h4 class="anchored" data-anchor-id="final-derivative-simplification">Final Derivative Simplification:</h4>
+<section id="attention-operation" class="level2">
+<h2 class="anchored" data-anchor-id="attention-operation">Attention Operation</h2>
+<p>For this exercise we will simplify the target index sets to match the most common setup, i.e.&nbsp;<span class="math inline">\(Q_{s_2 s_1} \in \mathbb{R}^{[M \times d]}\)</span>, <span class="math inline">\(K_{s_3 s_1} \in \mathbb{R}^{[N \times d]}\)</span>, <span class="math inline">\(V_{s_3 s_1} \in \mathbb{R}^{[N \times d]}\)</span></p>
 <blockquote class="blockquote">
-<p><span class="math display">\[\begin{align}
-\frac{\partial B_{s_2 s_1}}{\partial A_{s'_2 s'_1}} = \frac{\exp(A_{s_2 s_1})}{\sum_{s_1}\exp{(A_{s_2 s_1})}} \mathbb{1}_{(s_2 s_1) = (s'_2 s'_1)} - \frac{\exp(A_{s_2 s_1})}{[\sum_{s_1} exp(A_{s_2 s_1})]^2} \exp(A_{s_2 s'_1}) \mathbb{1}_{s_2 = s'_2} \\ = \frac{\exp(A_{s_2 s_1})}{\sum_{s_1}\exp{(A_{s_2 s_1})}} \mathbb{1}_{(s_2 s_1) = (s'_2 s'_1)} - \frac{\exp(A_{s_2 s_1}) \exp(A_{s_2 s'_1})}{[\sum_{s_1} exp(A_{s_2 s_1})]^2} \mathbb{1}_{s_2 = s'_2} \\
-= B_{s_2 s_1} \mathbb{1}_{(s_2 s_1) = (s'_2 s'_1)} - B_{s_2 s_1}B_{s_2 s'_1} \mathbb{1}_{s_2 = s'_2}
-\end{align}\]</span></p>
+<p>Note: In this doc, whenever we have to denote the exact dimensions instead of index set it will be denoted as <span class="math inline">\(.^{[... \times ... \times \dots]}\)</span> where <span class="math inline">\(\times\)</span> symbol separates across different index sets.</p>
 </blockquote>
-<blockquote class="blockquote">
+<p>Thus our operation becomes:</p>
 <p><span class="math display">\[\begin{align}
-\frac{\partial B_{s_2 s_1}}{\partial A_{s'_2 s'_1}} = B_{s_2 s_1} \mathbb{1}_{(s_2 s_1) = (s'_2 s'_1)} - B_{s_2 s_1}B_{s_2 s'_1} \mathbb{1}_{s_2 = s'_2}
-\end{align}\]</span></p>
-</blockquote>
-</section>
-<section id="full-reduction-with-loss-drivative" class="level4">
-<h4 class="anchored" data-anchor-id="full-reduction-with-loss-drivative">Full reduction: With Loss Drivative</h4>
-<p>Let’s assume the output <span class="math inline">\(B_{s_2 s_1}\)</span> being used by some frisky function to generate loss <span class="math inline">\(O_{s_3}\)</span> and somehow we have the pullback of <span class="math inline">\(B\)</span> w.r.t. <span class="math inline">\(O\)</span> as <span class="math inline">\(dB_{s_3 s_2 s_1} = \frac{\partial O_{s_3}}{\partial B_{s_2 s_1}}\)</span>, and now we are interested in find out what’s the pullback of <span class="math inline">\(A_{s'_2 s'_1}\)</span> w.r.t. <span class="math inline">\(O_{s_3}\)</span> i.e.&nbsp;<span class="math inline">\(\frac{\partial O_{s_3}}{\partial A_{s'_2 s'_1}}\)</span>.</p>
-<p><span class="math display">\[\begin{align}
-\frac{\partial O_{s_3}}{\partial A_{s'_2 s'_1}} = \sum_{s_2 s_1} \frac{\partial O_{s_3}}{\partial B_{s_2 s_1}}\frac{\partial B_{s_2 s_1}}{\partial A_{s'_2 s'_1}} \\
-= \sum_{s_2 s_1} dB_{s_3 s_2 s_1} \left[ \frac{\exp(A_{s_2 s_1})}{\sum_{s_1}\exp{(A_{s_2 s_1})}} \mathbb{1}_{(s_2 s_1) = (s'_2 s'_1)} - \frac{\exp(A_{s_2 s_1}) \exp(A_{s_2 s'_1})}{[\sum_{s_1} exp(A_{s_2 s_1})]^2} \mathbb{1}_{s_2 = s'_2} \right] \\
-= dB_{s_3 s'_2 s'_1} \frac{\exp(A_{s'_2 s'_1})}{\sum_{s_1}\exp{(A_{s'_2 s_1})}} - \sum_{s_2 s_1} dB_{s_3 s_2 s_1} \frac{\exp(A_{s_2 s_1}) \exp(A_{s_2 s'_1})}{[\sum_{s_1} exp(A_{s_2 s_1})]^2} \mathbb{1}_{s_2 = s'_2}
+B_{s_2 s_1} = attention_{s_1}(Q_{s_2 s_1}, K_{s_3 s_1}, V_{s_3 s_1}) \\
+B^{[M \times d]} = attention_{d}(Q^{[M \times d]}, K^{[N \times d]}, V^{[N \times d]})
 \end{align}\]</span></p>
 <hr>
 <p><span class="math display">\[\begin{align}
-\sum_{s_2 s_1} dB_{s_3 s_2 s_1} \frac{\exp(A_{s_2 s_1}) \exp(A_{s_2 s'_1})}{[\sum_{s_1} exp(A_{s_2 s_1})]^2} \mathbb{1}_{s_2 = s'_2} = \sum_{s_1} dB_{s_3 s'_2 s_1} \frac{\exp(A_{s'_2 s_1}) \exp(A_{s'_2 s'_1})}{[\sum_{s_1} exp(A_{s'_2 s_1})]^2} \\
-= \frac{\exp(A_{s'_2 s'_1})}{[\sum_{s_1} exp(A_{s'_2 s_1})]^2} \sum_{s_1} [dB_{s_3 s'_2 s_1} \exp(A_{s'_2 s_1})]
-\end{align}\]</span></p>
-<hr>
-<p><span class="math display">\[\begin{align}
-\frac{\partial O_{s_3}}{\partial A_{s'_2 s'_1}}
-= dB_{s_3 s'_2 s'_1} \frac{\exp(A_{s'_2 s'_1})}{\sum_{s_1}\exp{(A_{s'_2 s_1})}} - \frac{\exp(A_{s'_2 s'_1})}{[\sum_{s_1} exp(A_{s'_2 s_1})]^2} \sum_{s_1} [dB_{s_3 s'_2 s_1} \exp(A_{s'_2 s_1})] \\
-= dB_{s_3 s'_2 s'_1} B_{s'_2 s'_1} - B_{s'_2 s'_1}\frac{1}{\sum_{s_1} exp(A_{s'_2 s_1})} \sum_{s_1} [dB_{s_3 s'_2 s_1} \exp(A_{s'_2 s_1})] \\
-= dB_{s_3 s'_2 s'_1} B_{s'_2 s'_1} - B_{s'_2 s'_1} \sum_{s_1} [dB_{s_3 s'_2 s_1} B_{s'_2 s_1}] = B_{s'_2 s'_1} [dB_{s_3 s'_2 s'_1} - \sum_{s_1} [dB_{s_3 s'_2 s_1} B_{s'_2 s_1}]]
-\end{align}\]</span></p>
-<hr>
-<blockquote class="blockquote">
-<p><span class="math display">\[\begin{align}
-\frac{\partial O_{s_3}}{\partial A_{s'_2 s'_1}} = B_{s'_2 s'_1} \left[dB_{s_3 s'_2 s'_1} - \sum_{s_1} dB_{s_3 s'_2 s_1} B_{s'_2 s_1}\right]
-\end{align}\]</span></p>
-</blockquote>
-</section>
-</section>
-</section>
-<section id="application-in-attention-specialize-the-expressions" class="level2">
-<h2 class="anchored" data-anchor-id="application-in-attention-specialize-the-expressions">Application in Attention: Specialize the Expressions</h2>
-<section id="setup" class="level3">
-<h3 class="anchored" data-anchor-id="setup">Setup:</h3>
-<p><span class="math display">\[\begin{align}
-P_{ij} = softmax(S_{ij}) \\
-S_{ij} \in \mathbb{R}^{M \times N} \\
-P_{ij} \in \mathbb{R}^{M \times N} \\
-O_{\phi} \in \mathbb{R} \\
-dP_{\phi ij} = \frac{\partial O_{\phi}}{\partial P_{ij}} \in \mathbb{R}^{\phi \times M \times N} \implies \text{Known}
-\end{align}\]</span></p>
-</section>
-<section id="differentiation" class="level3">
-<h3 class="anchored" data-anchor-id="differentiation">Differentiation:</h3>
-<p><span class="math display">\[\begin{align}
-\frac{\partial O_{\phi}}{\partial S_{i'j'}} = \sum_{ij} \frac{\partial O_{\phi}}{\partial P_{ij}}\frac{\partial P_{ij}}{\partial S_{i'j'}} = P_{i'j'} \left[dP_{\phi i'j'} - \sum_{j} dP_{\phi i'j} P_{i'j} \right] \\
-= P_{i'j'} \left[dP_{i'j'} - \sum_{j} dP_{i'j} P_{i'j} \right] = P_{i'j'} \left[dP_{i'j'} - dP_{i':}^T \circ P_{i':} \right] \\
-= P \times \left[dP - BMM(dP_{i'1j, P_{i'j1}}) \right]
+S^{[M \times N]} = Q @ K^T = Q *_{(M \times d, N \times d, M \times N)} K \in \mathbb{R}^{[M \times N]} \\
+S_{rmax}^{M} = \max_{N} S^{[M \times N]} \in \mathbb{R}^{M} \\
+S_{rm}^{[m, n]} = S^{[m, n]} - S_{rmax}^{m} \forall [m, n] \in [M \times N]  \\
+P^{[M \times N]} = softmax_{N}(S_{rm}^{[M \times N]}) \\
+O^{[M \times d]} = P @ V = P *_{(M \times N, N \times d, M \times d)} V \in \mathbb{R}^{[M \times d]}
 \end{align}\]</span></p>
 <blockquote class="blockquote">
-<p><span class="math display">\[\begin{align}
-\frac{\partial O_{\phi}}{\partial S_{i'j'}} = P_{i'j'} \left[dP_{i'j'} - dP_{i':}^T \circ P_{i':} \right]
-\end{align}\]</span></p>
+<p>Note: Notation abuse -&gt; <span class="math inline">\(O \iff B\)</span></p>
 </blockquote>
+<section id="simplifying-forward-pass" class="level3">
+<h3 class="anchored" data-anchor-id="simplifying-forward-pass">Simplifying Forward Pass</h3>
+<p><span class="math display">\[\begin{align}
+P^{[m, n]} = \frac{\exp(S^{[m, n]} - \max_{n}(S^{[m, n]}))}{\sum_n \exp(S^{[m, n]} - \max_{n}(S^{[m, n]}))} = \frac{\exp(S^{[m, n]})}{\sum_n \exp(S^{[m, n]})}
+\end{align}\]</span></p>
+<blockquote class="blockquote">
+<p>Note: The independence over M in softmax the only aggregation is required over N dimension</p>
+</blockquote>
+<section id="computation-in-chunk" class="level4">
+<h4 class="anchored" data-anchor-id="computation-in-chunk">Computation in chunk</h4>
+<p>Here we will first look at what is reuired to generate the output for a single query i.e.&nbsp;<span class="math inline">\(O^{[m, d]}\)</span></p>
+<p><span class="math display">\[\begin{align}
+O^{[m, d]} = P_m *_{(N, N \times d, d)} V = \sum_n P^{[m, n]} \cdot V^{[n, d]} \\
+P^{[m, n]} = softmax_{n}(S^{[m, n]}) = \frac{\exp(S^{[m, n]})}{\sum_n \exp(S^{[m, n]})} \\
+O^{[m, d]} = \sum_n P^{[m, n]} \cdot V^{[n, d]} = \sum_n \frac{\exp(S^{[m, n]})}{\sum_n \exp(S^{[m, n]})} \cdot V^{[n, d]} \\
+= \frac{1}{\sum_n \exp(S^{[m, n]})}\sum_n \exp(S^{[m, n]}) \cdot V^{[n, d]}
+\end{align}\]</span></p>
+<p>We want to process <span class="math inline">\(O^{[m, d]} = \sum_N \dots\)</span> over <span class="math inline">\(n\)</span> sequentially to avoid whole sequence loading.</p>
+<p>for the sequence just processed till <span class="math inline">\(n = j\)</span> we can write: <span class="math display">\[\begin{align}
+O^{[m, d]}_j = \frac{1}{\sum_{n\in[0 \dots j]} \exp(S^{[m, n]})}\sum_{n\in[0 \dots j]} \exp(S^{[m, n]}) \cdot V^{[n, d]} = \frac{1}{l_j} u_j
+\end{align}\]</span></p>
+<p>Let’s say we proceed by a single setp <span class="math inline">\(n = j+1\)</span>: <span class="math display">\[\begin{align}
+O^{[m, d]}_{j+1} = \frac{1}{\sum_{n\in[0 \dots j, j+1]} \exp(S^{[m, n]})}\sum_{n\in[0 \dots j, j+1]} \exp(S^{[m, n]}) \cdot V^{[n, d]}\\
+= \frac{1}{l_j + \exp(S^{[m, n=j+1]})} (u_j + \exp(S^{[m, n=j+1]}) \cdot V^{[n=j+1, d]}) \\
+= \frac{O^{[m, d]}_{j} * l_j}{l_{j+1}} + \frac{\exp(S^{[m, n=j+1]}) \cdot V^{[n=j+1, d]}}{l_{j+1}}
+\end{align}\]</span></p>
+<p>Thus we can compute the output simply by iterating over the <span class="math inline">\(N\)</span> dimension for <span class="math inline">\(O^{m, d}\)</span> the final expression</p>
+<p><span class="math display">\[\begin{align}
+O^{[m, d]}_{0} =  \frac{\exp(S^{[m, n=0]}) \cdot V^{[n=0, d]}}{l_{0}}\\
+O^{[m, d]}_{j+1} = \frac{O^{[m, d]}_{j} * l_j}{l_{j+1}} + \frac{\exp(S^{[m, n=j+1]}) \cdot V^{[n=j+1, d]}}{l_{j+1}} \\
+l_0 = exp(S^{[m, n=0]}) \\
+l_{j+1} = l_j + exp(S^{[m, n=j+1]})
+\end{align}\]</span></p>
+</section>
+<section id="wtf-exp-can-explode-coz-of-high-multiplication-values" class="level4">
+<h4 class="anchored" data-anchor-id="wtf-exp-can-explode-coz-of-high-multiplication-values">WTF: <span class="math inline">\(\exp\)</span> can explode coz of high multiplication values</h4>
+<p><strong>max</strong> operation is used for numerical stability of the <strong>softmax</strong> especially keeping <strong>exp</strong> from exploding.</p>
+<p>Here next we will try to encorporate this stabilization technique in the above derived framework.</p>
+<p><span class="math display">\[\begin{align}
+m_0 = S^{[m, n=0]} \\
+m_{j+1} = \max(m_j, S^{[m, n=j+1]}) \\
+l_0 = \exp(S^{[m, n=0]} - m_0) \\
+l_{j+1} = \sum_{n\in[0 \dots j, j+1]}\exp(S^{[m, n]} - m_{j+1}) \\
+l_{j+1} = \frac{exp(-m_{j})}{\exp(m_{j+1} - m_{j})}\sum_{n\in[0 \dots j]}\exp(S^{[m, n]}) + \exp(S^{[m, n=j+1]} - m_{j+1}) \\
+l_{j+1} = l_{j}\exp(m_{j} - m_{j+1}) + \exp(S^{[m, n=j+1]} - m_{j+1}) \\
+O^{[m, d]}_{0} = \frac{\exp(S^{[m, n=0]} - m_{0}) \cdot V^{[n=0, d]}}{l_{0}} \\
+O^{[m, d]}_{j+1} = \frac{O^{[m, d]}_{j} * l_j}{l_{j+1}} + \frac{\exp(S^{[m, n=j+1]} - m_{j+1}) \cdot V^{[n=j+1, d]}}{l_{j+1}} \\
+\end{align}\]</span></p>
 
 
+</section>
 </section>
 </section>
 
