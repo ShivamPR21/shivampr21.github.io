@@ -31,6 +31,8 @@ ul.task-list li input[type="checkbox"] {
 <script src="site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="./">
 <link href=".//logo.png" rel="icon" type="image/png">
+<script src="site_libs/quarto-listing/list.min.js"></script>
+<script src="site_libs/quarto-listing/quarto-listing.js"></script>
 <script src="site_libs/quarto-html/quarto.js"></script>
 <script src="site_libs/quarto-html/popper.min.js"></script>
 <script src="site_libs/quarto-html/tippy.umd.min.js"></script>
@@ -67,10 +69,68 @@ ul.task-list li input[type="checkbox"] {
     "search-label": "Search"
   }
 }</script>
+<script>
 
+  window.document.addEventListener("DOMContentLoaded", function (_event) {
+    const listingTargetEl = window.document.querySelector('#listing-listing .list');
+    if (!listingTargetEl) {
+      // No listing discovered, do not attach.
+      return; 
+    }
+
+    const options = {
+      valueNames: ['listing-date','listing-title','listing-reading-time','listing-description','listing-categories',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-date-sort'] },{ data: ['listing-file-modified-sort'] }],
+      
+      searchColumns: ["listing-date","listing-title","listing-author","listing-image","listing-description","listing-categories"],
+    };
+
+    window['quarto-listings'] = window['quarto-listings'] || {};
+    window['quarto-listings']['listing-listing'] = new List('listing-listing', options);
+
+    if (window['quarto-listing-loaded']) {
+      window['quarto-listing-loaded']();
+    }
+  });
+
+  window.addEventListener('hashchange',() => {
+    if (window['quarto-listing-loaded']) {
+      window['quarto-listing-loaded']();
+    }
+  })
+  </script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
 
 <link rel="stylesheet" href="styles.css">
-<meta property="og:title" content="Shivam Pandey – ShivamPR21">
+<link rel="alternate" type="application/rss+xml" title="ShivamPR21" href="index.xml" data-external="1"><meta property="og:title" content="Shivam Pandey – ShivamPR21">
 <meta property="og:image" content="https://shivampr21.github.io/pandey3.jpg">
 <meta property="og:site_name" content="ShivamPR21">
 <meta name="twitter:title" content="Shivam Pandey – ShivamPR21">
@@ -138,9 +198,9 @@ ul.task-list li input[type="checkbox"] {
 <div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
 <!-- margin-sidebar -->
-    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
         
-    </div>
+    <h5 class="quarto-listing-category-title">Categories</h5><div class="quarto-listing-category category-default"><div class="category" data-category="">All <span class="quarto-category-count">(4)</span></div><div class="category" data-category="QXR0ZW50aW9u">Attention <span class="quarto-category-count">(2)</span></div><div class="category" data-category="QXV0b2dyYWQ=">Autograd <span class="quarto-category-count">(4)</span></div><div class="category" data-category="Q1VEQQ==">CUDA <span class="quarto-category-count">(2)</span></div><div class="category" data-category="Rmxhc2hBdHRlbnRpb24=">FlashAttention <span class="quarto-category-count">(2)</span></div><div class="category" data-category="TUFUSA==">MATH <span class="quarto-category-count">(4)</span></div><div class="category" data-category="TWF4">Max <span class="quarto-category-count">(1)</span></div><div class="category" data-category="U29mdG1heA==">Softmax <span class="quarto-category-count">(1)</span></div><div class="category" data-category="VHJhbnNmb3JtZXJz">Transformers <span class="quarto-category-count">(2)</span></div><div class="category" data-category="VHJpdG9u">Triton <span class="quarto-category-count">(2)</span></div></div></div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
 
@@ -182,7 +242,196 @@ ul.task-list li input[type="checkbox"] {
 
 
 
-<a onclick="window.scrollTo(0, 0); return false;" role="button" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a></main> <!-- /main -->
+
+<div class="quarto-listing quarto-listing-container-default" id="listing-listing">
+<div class="listing-actions-group">
+   <div class="input-group input-group-sm quarto-listing-sort">
+     <span class="input-group-text"><i class="bi bi-sort-down"></i></span>
+     <select id="listing-listing-sort" class="form-select" aria-label="Order By" onchange="window['quarto-listings']['listing-listing'].sort(this.options[this.selectedIndex].value, { order: this.options[this.selectedIndex].getAttribute('data-direction')})">
+       <option value="" disabled="" selected="" hidden="">Order By</option>
+       <option value="index" data-direction="asc">Default</option>
+         <option value="listing-title" data-direction="asc">
+          Title
+        </option>
+         <option value="listing-date-sort" data-direction="asc">
+          Date - Oldest
+        </option>
+         <option value="listing-date-sort" data-direction="desc">
+          Date - Newest
+        </option>
+     </select>
+  </div>
+    <div class="input-group input-group-sm quarto-listing-filter">
+      <span class="input-group-text"><i class="bi bi-search"></i></span>
+      <input type="text" class="search form-control" placeholder="Filter">
+    </div>
+</div>
+<div class="list quarto-listing-default">
+<div class="quarto-post image-right" data-index="0" data-categories="TWF4JTJDQXV0b2dyYWQlMkNNQVRIJTJDVHJpdG9uJTJDQ1VEQQ==" data-listing-date-sort="1743273000000" data-listing-file-modified-sort="1743316621500" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="2" data-listing-word-count-sort="346">
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="./posts/max-30-3-2025-kernelized/index.html" class="no-external">Max Kernel: Forward and Backward Pass (MATH)</a>
+</h3>
+<div class="listing-subtitle">
+<a href="./posts/max-30-3-2025-kernelized/index.html" class="no-external"></a>
+</div>
+<div class="listing-categories">
+<div class="listing-category" onclick="window.quartoListingCategory('TWF4'); return false;">
+Max
+</div>
+<div class="listing-category" onclick="window.quartoListingCategory('QXV0b2dyYWQ='); return false;">
+Autograd
+</div>
+<div class="listing-category" onclick="window.quartoListingCategory('TUFUSA=='); return false;">
+MATH
+</div>
+<div class="listing-category" onclick="window.quartoListingCategory('VHJpdG9u'); return false;">
+Triton
+</div>
+<div class="listing-category" onclick="window.quartoListingCategory('Q1VEQQ=='); return false;">
+CUDA
+</div>
+</div>
+<div class="listing-description">
+<a href="./posts/max-30-3-2025-kernelized/index.html" class="no-external"><span class="math inline">\(A \in \mathbb{R}^{s_2 s_1}\)</span> where <span class="math inline">\(s_2\)</span> and <span class="math inline">\(s_1\)</span> are the index set, for example in a 5D tensor <span class="math inline">\(A \in \mathbb{R}^{ijklm}\)</span> a possible index set could be <span class="math inline">\(s_2 = \{…</span><span class="math inline"></span></a>
+</div>
+</div>
+<div class="metadata">
+<a href="./posts/max-30-3-2025-kernelized/index.html" class="no-external">
+<div class="listing-date">
+Mar 30, 2025
+</div>
+<div class="listing-reading-time">
+2 min
+</div>
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="1" data-categories="U29mdG1heCUyQ0F1dG9ncmFkJTJDTUFUSCUyQ1RyaXRvbiUyQ0NVREE=" data-listing-date-sort="1743273000000" data-listing-file-modified-sort="1743316481725" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="4" data-listing-word-count-sort="679">
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="./posts/softmax-30-3-2025-kernelized/index.html" class="no-external">SoftMax Kernel: Forward and Backward Pass (MATH)</a>
+</h3>
+<div class="listing-subtitle">
+<a href="./posts/softmax-30-3-2025-kernelized/index.html" class="no-external"></a>
+</div>
+<div class="listing-categories">
+<div class="listing-category" onclick="window.quartoListingCategory('U29mdG1heA=='); return false;">
+Softmax
+</div>
+<div class="listing-category" onclick="window.quartoListingCategory('QXV0b2dyYWQ='); return false;">
+Autograd
+</div>
+<div class="listing-category" onclick="window.quartoListingCategory('TUFUSA=='); return false;">
+MATH
+</div>
+<div class="listing-category" onclick="window.quartoListingCategory('VHJpdG9u'); return false;">
+Triton
+</div>
+<div class="listing-category" onclick="window.quartoListingCategory('Q1VEQQ=='); return false;">
+CUDA
+</div>
+</div>
+<div class="listing-description">
+<a href="./posts/softmax-30-3-2025-kernelized/index.html" class="no-external"><span class="math inline">\(A \in \mathbb{R}^{s_2 s_1}\)</span> where <span class="math inline">\(s_2\)</span> and <span class="math inline">\(s_1\)</span> are the index set, for example in a 5D tensor <span class="math inline">\(A \in \mathbb{R}^{ijklm}\)</span> a possible index set could be <span class="math inline">\(s_2 = \{…</span><span class="math inline"></span></a>
+</div>
+</div>
+<div class="metadata">
+<a href="./posts/softmax-30-3-2025-kernelized/index.html" class="no-external">
+<div class="listing-date">
+Mar 30, 2025
+</div>
+<div class="listing-reading-time">
+4 min
+</div>
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="2" data-categories="Rmxhc2hBdHRlbnRpb24lMkNUcmFuc2Zvcm1lcnMlMkNBdHRlbnRpb24lMkNBdXRvZ3JhZCUyQ01BVEg=" data-listing-date-sort="1743273000000" data-listing-file-modified-sort="1743316863246" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="4" data-listing-word-count-sort="622">
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="./posts/flash-30-3-2025-kernelized/index.html" class="no-external">FlashAttention Kernel: Forward Pass (MATH)</a>
+</h3>
+<div class="listing-subtitle">
+<a href="./posts/flash-30-3-2025-kernelized/index.html" class="no-external"></a>
+</div>
+<div class="listing-categories">
+<div class="listing-category" onclick="window.quartoListingCategory('Rmxhc2hBdHRlbnRpb24='); return false;">
+FlashAttention
+</div>
+<div class="listing-category" onclick="window.quartoListingCategory('VHJhbnNmb3JtZXJz'); return false;">
+Transformers
+</div>
+<div class="listing-category" onclick="window.quartoListingCategory('QXR0ZW50aW9u'); return false;">
+Attention
+</div>
+<div class="listing-category" onclick="window.quartoListingCategory('QXV0b2dyYWQ='); return false;">
+Autograd
+</div>
+<div class="listing-category" onclick="window.quartoListingCategory('TUFUSA=='); return false;">
+MATH
+</div>
+</div>
+<div class="listing-description">
+<a href="./posts/flash-30-3-2025-kernelized/index.html" class="no-external"><span class="math inline">\(A \in \mathbb{R}^{s_2 s_1}\)</span> where <span class="math inline">\(s_2\)</span> and <span class="math inline">\(s_1\)</span> are the index set, for example in a 5D tensor <span class="math inline">\(A \in \mathbb{R}^{ijklm}\)</span> a possible index set could be <span class="math inline">\(s_2 = \{…</span><span class="math inline"></span></a>
+</div>
+</div>
+<div class="metadata">
+<a href="./posts/flash-30-3-2025-kernelized/index.html" class="no-external">
+<div class="listing-date">
+Mar 30, 2025
+</div>
+<div class="listing-reading-time">
+4 min
+</div>
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="3" data-categories="Rmxhc2hBdHRlbnRpb24lMkNUcmFuc2Zvcm1lcnMlMkNBdHRlbnRpb24lMkNBdXRvZ3JhZCUyQ01BVEg=" data-listing-date-sort="1743273000000" data-listing-file-modified-sort="1743317808455" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="6" data-listing-word-count-sort="1048">
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="./posts/flash-bwd-30-3-2025-kernelized/index.html" class="no-external">FlashAttention Kernel: Backward Pass (MATH)</a>
+</h3>
+<div class="listing-subtitle">
+<a href="./posts/flash-bwd-30-3-2025-kernelized/index.html" class="no-external"></a>
+</div>
+<div class="listing-categories">
+<div class="listing-category" onclick="window.quartoListingCategory('Rmxhc2hBdHRlbnRpb24='); return false;">
+FlashAttention
+</div>
+<div class="listing-category" onclick="window.quartoListingCategory('VHJhbnNmb3JtZXJz'); return false;">
+Transformers
+</div>
+<div class="listing-category" onclick="window.quartoListingCategory('QXR0ZW50aW9u'); return false;">
+Attention
+</div>
+<div class="listing-category" onclick="window.quartoListingCategory('QXV0b2dyYWQ='); return false;">
+Autograd
+</div>
+<div class="listing-category" onclick="window.quartoListingCategory('TUFUSA=='); return false;">
+MATH
+</div>
+</div>
+<div class="listing-description">
+<a href="./posts/flash-bwd-30-3-2025-kernelized/index.html" class="no-external"><span class="math inline">\(A \in \mathbb{R}^{s_2 s_1}\)</span> where <span class="math inline">\(s_2\)</span> and <span class="math inline">\(s_1\)</span> are the index set, for example in a 5D tensor <span class="math inline">\(A \in \mathbb{R}^{ijklm}\)</span> a possible index set could be <span class="math inline">\(s_2 = \{…</span><span class="math inline"></span></a>
+</div>
+</div>
+<div class="metadata">
+<a href="./posts/flash-bwd-30-3-2025-kernelized/index.html" class="no-external">
+<div class="listing-date">
+Mar 30, 2025
+</div>
+<div class="listing-reading-time">
+6 min
+</div>
+</a>
+</div>
+</div>
+</div>
+<div class="listing-no-matching d-none">
+No matching items
+</div>
+</div><a onclick="window.scrollTo(0, 0); return false;" role="button" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a></main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
 window.document.addEventListener("DOMContentLoaded", function (event) {
   const toggleBodyColorMode = (bsSheetEl) => {

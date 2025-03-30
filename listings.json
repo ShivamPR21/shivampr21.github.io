@@ -7,5 +7,14 @@
       "/posts/flash-30-3-2025-kernelized/index.html",
       "/posts/flash-bwd-30-3-2025-kernelized/index.html"
     ]
+  },
+  {
+    "listing": "/index.html",
+    "items": [
+      "/posts/max-30-3-2025-kernelized/index.html",
+      "/posts/softmax-30-3-2025-kernelized/index.html",
+      "/posts/flash-30-3-2025-kernelized/index.html",
+      "/posts/flash-bwd-30-3-2025-kernelized/index.html"
+    ]
   }
 ]

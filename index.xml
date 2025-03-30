@@ -1,0 +1,332 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss  xmlns:atom="http://www.w3.org/2005/Atom" 
+      xmlns:media="http://search.yahoo.com/mrss/" 
+      xmlns:content="http://purl.org/rss/1.0/modules/content/" 
+      xmlns:dc="http://purl.org/dc/elements/1.1/" 
+      version="2.0">
+<channel>
+<title>ShivamPR21</title>
+<link>https://shivampr21.github.io/</link>
+<atom:link href="https://shivampr21.github.io/index.xml" rel="self" type="application/rss+xml"/>
+<description></description>
+<generator>quarto-1.6.36</generator>
+<lastBuildDate>Sat, 29 Mar 2025 18:30:00 GMT</lastBuildDate>
+<item>
+  <title>Max Kernel: Forward and Backward Pass (MATH)</title>
+  <dc:creator>Shivam Pandey</dc:creator>
+  <link>https://shivampr21.github.io/posts/max-30-3-2025-kernelized/</link>
+  <description><![CDATA[ 
+
+
+
+
+<!-- # Max Kernel: Math & Implementation -->
+<ul>
+<li><p><img src="https://latex.codecogs.com/png.latex?A%20%5Cin%20%5Cmathbb%7BR%7D%5E%7Bs_2%20s_1%7D"> where <img src="https://latex.codecogs.com/png.latex?s_2"> and <img src="https://latex.codecogs.com/png.latex?s_1"> are the index set, for example in a 5D tensor <img src="https://latex.codecogs.com/png.latex?A%20%5Cin%20%5Cmathbb%7BR%7D%5E%7Bijklm%7D"> a possible index set could be <img src="https://latex.codecogs.com/png.latex?s_2%20=%20%5C%7B%20i,%20j%20%5C%7D"> and <img src="https://latex.codecogs.com/png.latex?s_1%20=%20%5C%7Bk,%20l,%20m%20%5C%7D">.</p></li>
+<li><p><img src="https://latex.codecogs.com/png.latex?B_%7Bs_2%7D%20=%20max_%7Bs_1%7D(A_%7Bs_2%20s_1%7D)"> is a <strong>max</strong> operation over <strong>s1 index set of A</strong>, and the resulting index set is the index set of <img src="https://latex.codecogs.com/png.latex?A"> reduced over <img src="https://latex.codecogs.com/png.latex?s_1"> <em>s.t.</em> <img src="https://latex.codecogs.com/png.latex?B%20%5Cin%20%5Cmathbb%7BR%7D%5E%7Bs_2%7D"></p></li>
+</ul>
+<section id="max-reduction-operation" class="level2">
+<h2 class="anchored" data-anchor-id="max-reduction-operation">Max (Reduction) operation</h2>
+<p><img src="https://latex.codecogs.com/png.latex?%5Cbegin%7Balign%7D%0AB_%7Bs_2%7D%20=%20%5Cmax_%7Bs_1%7D(A_%7Bs_2%20s_1%7D)%20=%20A_%7Bs_2%20s%5Em_1%7D%20%5Cbig%7C_%7Bs%5Em_1%20=%20argmax_%7Bs_1%7D(A_%7Bs_2%20s_1%7D)%7D%0A%5Cend%7Balign%7D"></p>
+</section>
+<section id="backward-pass" class="level2">
+<h2 class="anchored" data-anchor-id="backward-pass">Backward Pass:</h2>
+<p>Here we will deduce the pullback of <img src="https://latex.codecogs.com/png.latex?A"> under the <img src="https://latex.codecogs.com/png.latex?%5Cmax"> operation, w.r.t. <img src="https://latex.codecogs.com/png.latex?B">.</p>
+<p><img src="https://latex.codecogs.com/png.latex?%5Cbegin%7Balign%7D%0A%5Cfrac%7B%5Cpartial%20B_%7Bs_2%7D%7D%7B%5Cpartial%20A_%7Bs'_2%20s'_1%7D%7D%20=%20%5Cfrac%7B%5Cpartial%20A_%7Bs_2%20s%5Em_1%7D%7D%7B%5Cpartial%20A_%7Bs'_2%20s'_1%7D%7D%20=%20%5Cmathbb%7B1%7D_%7Bs_2%20=%20s'_2%7D%20%5Ccdot%20%5Cmathbb%7B1%7D_%7Bs%5Em_1%20=%20s'_1%7D%0A%5Cend%7Balign%7D"></p>
+<section id="full-reduction-with-loss-drivative" class="level4">
+<h4 class="anchored" data-anchor-id="full-reduction-with-loss-drivative">Full reduction: With Loss Drivative</h4>
+<p>Let’s assume the output <img src="https://latex.codecogs.com/png.latex?B_%7Bs_2%7D"> being used by some frisky function to generate loss <img src="https://latex.codecogs.com/png.latex?O_%7Bs_3%7D"> and somehow we have the pullback of <img src="https://latex.codecogs.com/png.latex?B"> w.r.t. <img src="https://latex.codecogs.com/png.latex?O"> as <img src="https://latex.codecogs.com/png.latex?dB_%7Bs_3%20s_2%7D%20=%20%5Cfrac%7B%5Cpartial%20O_%7Bs_3%7D%7D%7B%5Cpartial%20B_%7Bs_2%7D%7D">, and now we are interested in find out what’s the pullback of <img src="https://latex.codecogs.com/png.latex?A_%7Bs'_2%20s'_1%7D"> w.r.t. <img src="https://latex.codecogs.com/png.latex?O_%7Bs_3%7D"> i.e.&nbsp;<img src="https://latex.codecogs.com/png.latex?%5Cfrac%7B%5Cpartial%20O_%7Bs_3%7D%7D%7B%5Cpartial%20A_%7Bs'_2%20s'_1%7D%7D">.</p>
+<p><img src="https://latex.codecogs.com/png.latex?%5Cbegin%7Balign%7D%0A%5Cfrac%7B%5Cpartial%20O_%7Bs_3%7D%7D%7B%5Cpartial%20A_%7Bs'_2%20s'_1%7D%7D%20=%20%5Csum_%7Bs_2%7D%20%5Cfrac%7B%5Cpartial%20O_%7Bs_3%7D%7D%7B%5Cpartial%20B_%7Bs_2%7D%7D%20%5Cfrac%7B%5Cpartial%20B_%7Bs_2%7D%7D%7B%5Cpartial%20A_%7Bs'_2%20s'_1%7D%7D%20=%20%5Csum_%7Bs_2%7D%20dB_%7Bs_3%20s_2%7D%20%5Cmathbb%7B1%7D_%7Bs_2%20=%20s'_2%7D%20%5Ccdot%20%5Cmathbb%7B1%7D_%7Bs%5Em_1%20=%20s'_1%7D%20=%20dB_%7Bs_3%20s'_2%7D%20%5Cmathbb%7B1%7D_%7Bs%5Em_1%20=%20s'_1%7D%20%5Cbig%7C_%7Bs%5Em_1%20=%20argmax_%7Bs_1%7D(A_%7Bs'_2%20s_1%7D)%7D%0A%5Cend%7Balign%7D"></p>
+<blockquote class="blockquote">
+<p><img src="https://latex.codecogs.com/png.latex?%5Cbegin%7Balign%7D%0A%5Cfrac%7B%5Cpartial%20O_%7Bs_3%7D%7D%7B%5Cpartial%20A_%7Bs'_2%20s'_1%7D%7D%20=%20dB_%7Bs_3%20s'_2%7D%20%5Cmathbb%7B1%7D_%7Bs%5Em_1%20=%20s'_1%7D%20%5Cbig%7C_%7Bs%5Em_1%20=%20argmax_%7Bs_1%7D(A_%7Bs'_2%20s_1%7D)%7D%0A%5Cend%7Balign%7D"></p>
+</blockquote>
+</section>
+</section>
+<section id="application-in-attention-specialize-the-expressions" class="level2">
+<h2 class="anchored" data-anchor-id="application-in-attention-specialize-the-expressions">Application in Attention: Specialize the Expressions</h2>
+<section id="setup" class="level3">
+<h3 class="anchored" data-anchor-id="setup">Setup:</h3>
+<p><img src="https://latex.codecogs.com/png.latex?%5Cbegin%7Balign%7D%0AS_%7Bij%7D%20=%20S%5Ep_%7Bij%7D%20-%20%5Cmax_j(S%5Ep_%7Bij%7D)%20%5C%5C%0AP_%7Bij%7D%20=%20softmax(S_%7Bij%7D)%20%5C%5C%0AS_%7Bij%7D%20%5Cin%20%5Cmathbb%7BR%7D%5E%7BM%20%5Ctimes%20N%7D%20%5C%5C%0AP_%7Bij%7D%20%5Cin%20%5Cmathbb%7BR%7D%5E%7BM%20%5Ctimes%20N%7D%20%5C%5C%0AO_%7B%5Cphi%7D%20%5Cin%20%5Cmathbb%7BR%7D%20%5C%5C%0AdP_%7B%5Cphi%20ij%7D%20=%20%5Cfrac%7B%5Cpartial%20O_%7B%5Cphi%7D%7D%7B%5Cpartial%20P_%7Bij%7D%7D%20%5Cin%20%5Cmathbb%7BR%7D%5E%7B%5Cphi%20%5Ctimes%20M%20%5Ctimes%20N%7D%20%5Cimplies%20%5Ctext%7BKnown%7D%20%5C%5C%0AdS_%7B%5Cphi%20ij%7D%20=%20%5Cfrac%7B%5Cpartial%20O_%7B%5Cphi%7D%7D%7B%5Cpartial%20S_%7Bij%7D%7D%20%5Cin%20%5Cmathbb%7BR%7D%5E%7B%5Cphi%20%5Ctimes%20M%20%5Ctimes%20N%7D%20=%20%20P_%7Bij%7D%20%5Cleft%5BdP_%7Bij%7D%20-%20dP_%7Bi:%7D%5ET%20%5Ccirc%20P_%7Bi:%7D%20%5Cright%5D%0A%5Cend%7Balign%7D"></p>
+</section>
+<section id="differentiation" class="level3">
+<h3 class="anchored" data-anchor-id="differentiation">Differentiation</h3>
+<p><img src="https://latex.codecogs.com/png.latex?%5Cbegin%7Balign%7D%0A%5Cfrac%7B%5Cpartial%20O_%7B%5Cphi%7D%7D%7B%5Cpartial%20S%5Ep_%7Bi'j'%7D%7D%20=%20%5Csum_%7Bij%7D%20%5Cfrac%7B%5Cpartial%20O_%7B%5Cphi%7D%7D%7B%5Cpartial%20S_%7Bij%7D%7D%20%5Cfrac%7B%5Cpartial%20S_%7Bij%7D%7D%7B%5Cpartial%20S%5Ep_%7Bi'j'%7D%7D%20=%20%5Csum_%7Bij%7D%20dS_%7B%5Cphi%20ij%7D%20(%5Cmathbb%7B1%7D_%7Bij%20=%20i'j'%7D%20-%20%5Cmathbb%7B1%7D_%7Bi%20=%20i'%7D%20%5Cmathbb%7B1%7D_%7Bj%5Em%20=%20j'%7D%20%5Cbig%7C_%7Bargmax_%7Bj%7D(S%5Ep_%7Bi'j%7D)%7D)%20%5C%5C%0A=%20dS_%7Bi'j'%7D%20-%20%5Csum_%7Bj%7D%20dS_%7Bi'j%7D%20%5Cmathbb%7B1%7D_%7Bj%5Em%20=%20j'%7D%20%5Cbig%7C_%7Bj%5Em=%7Bargmax_%7Bj%7D(S%5Ep_%7Bi'j%7D)%7D%7D%20=%20dS_%7Bi'j'%7D%20-%20%5Cmathbb%7B1%7D_%7Bj%5Em%20=%20j'%7D%20%5Cbig%7C_%7Bj%5Em=%7Bargmax_%7Bj%7D(S%5Ep_%7Bi'j%7D)%7D%7D%20%5Csum_%7Bj%7D%20dS_%7Bi'j%7D%0A%5Cend%7Balign%7D"></p>
+<section id="replacing-ds_ij" class="level4">
+<h4 class="anchored" data-anchor-id="replacing-ds_ij">Replacing <img src="https://latex.codecogs.com/png.latex?dS_%7Bij%7D">:</h4>
+<p><img src="https://latex.codecogs.com/png.latex?%5Cbegin%7Balign%7D%0A%5Cfrac%7B%5Cpartial%20O_%7B%5Cphi%7D%7D%7B%5Cpartial%20S%5Ep_%7Bi'j'%7D%7D%20=%20dS_%7Bi'j'%7D%20-%20%5Cmathbb%7B1%7D_%7Bj%5Em%20=%20j'%7D%20%5Cbig%7C_%7Bj%5Em=%7Bargmax_%7Bj%7D(S%5Ep_%7Bi'j%7D)%7D%7D%20%5Csum_%7Bj%7D%20dS_%7Bi'j%7D%20%5C%5C%0A%5Cend%7Balign%7D"></p>
+
+
+</section>
+</section>
+</section>
+
+<a onclick="window.scrollTo(0, 0); return false;" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a> ]]></description>
+  <category>Max</category>
+  <category>Autograd</category>
+  <category>MATH</category>
+  <category>Triton</category>
+  <category>CUDA</category>
+  <guid>https://shivampr21.github.io/posts/max-30-3-2025-kernelized/</guid>
+  <pubDate>Sat, 29 Mar 2025 18:30:00 GMT</pubDate>
+</item>
+<item>
+  <title>SoftMax Kernel: Forward and Backward Pass (MATH)</title>
+  <dc:creator>Shivam Pandey</dc:creator>
+  <link>https://shivampr21.github.io/posts/softmax-30-3-2025-kernelized/</link>
+  <description><![CDATA[ 
+
+
+
+
+<!-- # Softmax Kernel: Math & Implementation -->
+<ul>
+<li><p><img src="https://latex.codecogs.com/png.latex?A%20%5Cin%20%5Cmathbb%7BR%7D%5E%7Bs_2%20s_1%7D"> where <img src="https://latex.codecogs.com/png.latex?s_2"> and <img src="https://latex.codecogs.com/png.latex?s_1"> are the index set, for example in a 5D tensor <img src="https://latex.codecogs.com/png.latex?A%20%5Cin%20%5Cmathbb%7BR%7D%5E%7Bijklm%7D"> a possible index set could be <img src="https://latex.codecogs.com/png.latex?s_2%20=%20%5C%7B%20i,%20j%20%5C%7D"> and <img src="https://latex.codecogs.com/png.latex?s_1%20=%20%5C%7Bk,%20l,%20m%20%5C%7D">.</p></li>
+<li><p><img src="https://latex.codecogs.com/png.latex?B_%7Bs_2%20s_1%7D%20=%20softmax_%7Bs_1%7D(A_%7Bs_2%20s_1%7D)"> is a softmax operation over s1 index set of A, and the resulting index set still remains same as A <em>s.t.</em> <img src="https://latex.codecogs.com/png.latex?B%20%5Cin%20%5Cmathbb%7BR%7D%5E%7Bs2s1%7D"></p></li>
+</ul>
+<section id="softmax-operation" class="level2">
+<h2 class="anchored" data-anchor-id="softmax-operation">Softmax Operation</h2>
+<p><img src="https://latex.codecogs.com/png.latex?%5Cbegin%7Bequation%7D%0AB_%7Bs_2%20s_1%7D%20=%20softmax_%7Bs_1%7D(A_%7Bs_2%20s_1%7D)%0A%5Cend%7Bequation%7D"></p>
+<section id="intermediate-result-1" class="level3">
+<h3 class="anchored" data-anchor-id="intermediate-result-1">Intermediate Result: #1</h3>
+<p><img src="https://latex.codecogs.com/png.latex?%5Cbegin%7Bequation%7D%0AI%5E1_%7Bs_2%20s_1%7D%20=%20%5Cexp%7B(A_%7Bs_2%20s_1%7D)%7D%0A%5Cend%7Bequation%7D"></p>
+</section>
+<section id="intermediate-result-2" class="level3">
+<h3 class="anchored" data-anchor-id="intermediate-result-2">Intermediate Result: #2</h3>
+<p><img src="https://latex.codecogs.com/png.latex?%5Cbegin%7Bequation%7D%0AI%5E2_%7Bs_2%7D%20=%20%5Csum_%7Bs1%7DI%5E1_%7Bs_2%20s_1%7D%0A%5Cend%7Bequation%7D"></p>
+</section>
+<section id="softmax" class="level3">
+<h3 class="anchored" data-anchor-id="softmax">Softmax:</h3>
+<p><img src="https://latex.codecogs.com/png.latex?%5Cbegin%7Bequation%7D%0AB_%7Bs_2%20s_1%7D%20=%20%5Cfrac%7BI%5E1_%7Bs_2%20s_1%7D%7D%7BI%5E2_%7Bs_2%7D%7D%20=%20%5Cfrac%7B%5Cexp%7B(A_%7Bs_2%20s_1%7D)%7D%7D%7B%5Csum_%7Bs1%7D%5Cexp%7B(A_%7Bs_2%20s_1%7D)%7D%7D%0A%5Cend%7Bequation%7D"></p>
+</section>
+</section>
+<section id="backward-pass" class="level2">
+<h2 class="anchored" data-anchor-id="backward-pass">Backward Pass:</h2>
+<p>Here we will just look at the backward pass of the softmax kernel alone, as it will help us understand a much wider concept of having a <strong>multidimensional loss function</strong> instead of a <strong>scalar loss</strong>.</p>
+<p>Fortunately this also simplifies the problem for us as we won’t have to account for any pullbacks for the output <img src="https://latex.codecogs.com/png.latex?B_%7Bs_2%20s_1%7D"> itself.</p>
+<p><img src="https://latex.codecogs.com/png.latex?%5Cbegin%7Bequation%7D%0A%5Cfrac%7B%5Cpartial%20B_%7Bs_2%20s_1%7D%7D%7B%5Cpartial%20A_%7Bs'_2%20s'_1%7D%7D%20%5Cin%20%5Cmathbb%7BR%7D%5E%7Bs_2%20s_1%20s'_2%20s'_1%7D%0A%5Cend%7Bequation%7D"></p>
+<section id="derivation" class="level3">
+<h3 class="anchored" data-anchor-id="derivation">Derivation:</h3>
+<p><img src="https://latex.codecogs.com/png.latex?%5Cbegin%7Balign%7D%0A%5Cfrac%7B%5Cpartial%20B_%7Bs_2%20s_1%7D%7D%7B%5Cpartial%20A_%7Bs'_2%20s'_1%7D%7D%20=%20%5Cfrac%7B1%7D%7B%5Csum_%7Bs_1%7D%5Cexp%7B(A_%7Bs_2%20s_1%7D)%7D%7D%20%5Cfrac%7B%5Cpartial%20%5Cexp%7B(A_%7Bs_2%20s_1%7D)%7D%7D%7B%5Cpartial%20A_%7Bs'_2%20s'_1%7D%7D%20+%20%5Cexp(A_%7Bs_2%20s_1%7D)%5Cfrac%7B%5Cpartial%20%5Csum_%7Bs_1%7D%201/exp(A_%7Bs_2%20s_1%7D)%7D%7B%5Cpartial%20A_%7Bs'_2%20s'_1%7D%7D%0A%5Cend%7Balign%7D"></p>
+<hr>
+<p><img src="https://latex.codecogs.com/png.latex?%5Cbegin%7Balign%7D%0A%5Cfrac%7B1%7D%7B%5Csum_%7Bs_1%7D%5Cexp%7B(A_%7Bs_2%20s_1%7D)%7D%7D%20%5Cfrac%7B%5Cpartial%20%5Cexp%7B(A_%7Bs_2%20s_1%7D)%7D%7D%7B%5Cpartial%20A_%7Bs'_2%20s'_1%7D%7D%20=%20%5Cfrac%7B%5Cexp(A_%7Bs_2%20s_1%7D)%7D%7B%5Csum_%7Bs_1%7D%5Cexp%7B(A_%7Bs_2%20s_1%7D)%7D%7D%20%5Cfrac%7BA_%7Bs_2%20s_1%7D%7D%7BA_%7Bs'_2%20s'_1%7D%7D%20=%20%5Cfrac%7B%5Cexp(A_%7Bs_2%20s_1%7D)%7D%7B%5Csum_%7Bs_1%7D%5Cexp%7B(A_%7Bs_2%20s_1%7D)%7D%7D%20%5Cmathbb%7B1%7D_%7B(s_2%20s_1)%20=%20(s'_2%20s'_1)%7D%0A%5Cend%7Balign%7D"></p>
+<hr>
+<p><img src="https://latex.codecogs.com/png.latex?%5Cbegin%7Bequation%7D%0A%5Cexp(A_%7Bs_2%20s_1%7D)%5Cfrac%7B%5Cpartial%20%5Csum_%7Bs_1%7D%201/exp(A_%7Bs_2%20s_1%7D)%7D%7B%5Cpartial%20A_%7Bs'_2%20s'_1%7D%7D%20=%20-%5Cfrac%7B%5Cexp(A_%7Bs_2%20s_1%7D)%7D%7B%5B%5Csum_%7Bs_1%7D%20exp(A_%7Bs_2%20s_1%7D)%5D%5E2%7D%20%5Cfrac%7B%5Cpartial%20%5Csum_%7Bs_1%7D%20%5Cexp(A_%7Bs_2%20s_1%7D)%7D%7B%5Cpartial%20A_%7Bs'_2%20s'_1%7D%7D%0A%5Cend%7Bequation%7D"></p>
+<p><img src="https://latex.codecogs.com/png.latex?%5Cbegin%7Balign%7D%0A%5Cfrac%7B%5Cpartial%20%5Csum_%7Bs_1%7D%20%5Cexp(A_%7Bs_2%20s_1%7D)%7D%7B%5Cpartial%20A_%7Bs'_2%20s'_1%7D%7D%20=%20%5Csum_%7Bs_1%7D%20%5Cfrac%7B%5Cpartial%20%5Cexp(A_%7Bs_2%20s_1%7D)%7D%7B%5Cpartial%20A_%7Bs'_2%20s'_1%7D%7D%20=%20%5Csum_%7Bs_1%7D%20%5Cexp(A_%7Bs_2%20s_1%7D)%20%5Cfrac%7B%5Cpartial%20A_%7Bs_2%20s_1%7D%7D%7B%5Cpartial%20A_%7Bs'_2%20s'_1%7D%7D%20%5C%5C%20=%20%5Csum_%7Bs_1%7D%20%5Cexp(A_%7Bs_2%20s_1%7D)%20%5Cmathbb%7B1%7D_%7B(s_2%20s_1)%20=%20(s'_2%20s'_1)%7D%20=%20%5Cexp(A_%7Bs_2%20s'_1%7D)%20%5Cmathbb%7B1%7D_%7Bs_2%20=%20s'_2%7D%0A%5Cend%7Balign%7D"></p>
+<hr>
+<section id="final-derivative-simplification" class="level4">
+<h4 class="anchored" data-anchor-id="final-derivative-simplification">Final Derivative Simplification:</h4>
+<blockquote class="blockquote">
+<p><img src="https://latex.codecogs.com/png.latex?%5Cbegin%7Balign%7D%0A%5Cfrac%7B%5Cpartial%20B_%7Bs_2%20s_1%7D%7D%7B%5Cpartial%20A_%7Bs'_2%20s'_1%7D%7D%20=%20%5Cfrac%7B%5Cexp(A_%7Bs_2%20s_1%7D)%7D%7B%5Csum_%7Bs_1%7D%5Cexp%7B(A_%7Bs_2%20s_1%7D)%7D%7D%20%5Cmathbb%7B1%7D_%7B(s_2%20s_1)%20=%20(s'_2%20s'_1)%7D%20-%20%5Cfrac%7B%5Cexp(A_%7Bs_2%20s_1%7D)%7D%7B%5B%5Csum_%7Bs_1%7D%20exp(A_%7Bs_2%20s_1%7D)%5D%5E2%7D%20%5Cexp(A_%7Bs_2%20s'_1%7D)%20%5Cmathbb%7B1%7D_%7Bs_2%20=%20s'_2%7D%20%5C%5C%20=%20%5Cfrac%7B%5Cexp(A_%7Bs_2%20s_1%7D)%7D%7B%5Csum_%7Bs_1%7D%5Cexp%7B(A_%7Bs_2%20s_1%7D)%7D%7D%20%5Cmathbb%7B1%7D_%7B(s_2%20s_1)%20=%20(s'_2%20s'_1)%7D%20-%20%5Cfrac%7B%5Cexp(A_%7Bs_2%20s_1%7D)%20%5Cexp(A_%7Bs_2%20s'_1%7D)%7D%7B%5B%5Csum_%7Bs_1%7D%20exp(A_%7Bs_2%20s_1%7D)%5D%5E2%7D%20%5Cmathbb%7B1%7D_%7Bs_2%20=%20s'_2%7D%20%5C%5C%0A=%20B_%7Bs_2%20s_1%7D%20%5Cmathbb%7B1%7D_%7B(s_2%20s_1)%20=%20(s'_2%20s'_1)%7D%20-%20B_%7Bs_2%20s_1%7DB_%7Bs_2%20s'_1%7D%20%5Cmathbb%7B1%7D_%7Bs_2%20=%20s'_2%7D%0A%5Cend%7Balign%7D"></p>
+</blockquote>
+<blockquote class="blockquote">
+<p><img src="https://latex.codecogs.com/png.latex?%5Cbegin%7Balign%7D%0A%5Cfrac%7B%5Cpartial%20B_%7Bs_2%20s_1%7D%7D%7B%5Cpartial%20A_%7Bs'_2%20s'_1%7D%7D%20=%20B_%7Bs_2%20s_1%7D%20%5Cmathbb%7B1%7D_%7B(s_2%20s_1)%20=%20(s'_2%20s'_1)%7D%20-%20B_%7Bs_2%20s_1%7DB_%7Bs_2%20s'_1%7D%20%5Cmathbb%7B1%7D_%7Bs_2%20=%20s'_2%7D%0A%5Cend%7Balign%7D"></p>
+</blockquote>
+</section>
+<section id="full-reduction-with-loss-drivative" class="level4">
+<h4 class="anchored" data-anchor-id="full-reduction-with-loss-drivative">Full reduction: With Loss Drivative</h4>
+<p>Let’s assume the output <img src="https://latex.codecogs.com/png.latex?B_%7Bs_2%20s_1%7D"> being used by some frisky function to generate loss <img src="https://latex.codecogs.com/png.latex?O_%7Bs_3%7D"> and somehow we have the pullback of <img src="https://latex.codecogs.com/png.latex?B"> w.r.t. <img src="https://latex.codecogs.com/png.latex?O"> as <img src="https://latex.codecogs.com/png.latex?dB_%7Bs_3%20s_2%20s_1%7D%20=%20%5Cfrac%7B%5Cpartial%20O_%7Bs_3%7D%7D%7B%5Cpartial%20B_%7Bs_2%20s_1%7D%7D">, and now we are interested in find out what’s the pullback of <img src="https://latex.codecogs.com/png.latex?A_%7Bs'_2%20s'_1%7D"> w.r.t. <img src="https://latex.codecogs.com/png.latex?O_%7Bs_3%7D"> i.e.&nbsp;<img src="https://latex.codecogs.com/png.latex?%5Cfrac%7B%5Cpartial%20O_%7Bs_3%7D%7D%7B%5Cpartial%20A_%7Bs'_2%20s'_1%7D%7D">.</p>
+<p><img src="https://latex.codecogs.com/png.latex?%5Cbegin%7Balign%7D%0A%5Cfrac%7B%5Cpartial%20O_%7Bs_3%7D%7D%7B%5Cpartial%20A_%7Bs'_2%20s'_1%7D%7D%20=%20%5Csum_%7Bs_2%20s_1%7D%20%5Cfrac%7B%5Cpartial%20O_%7Bs_3%7D%7D%7B%5Cpartial%20B_%7Bs_2%20s_1%7D%7D%5Cfrac%7B%5Cpartial%20B_%7Bs_2%20s_1%7D%7D%7B%5Cpartial%20A_%7Bs'_2%20s'_1%7D%7D%20%5C%5C%0A=%20%5Csum_%7Bs_2%20s_1%7D%20dB_%7Bs_3%20s_2%20s_1%7D%20%5Cleft%5B%20%5Cfrac%7B%5Cexp(A_%7Bs_2%20s_1%7D)%7D%7B%5Csum_%7Bs_1%7D%5Cexp%7B(A_%7Bs_2%20s_1%7D)%7D%7D%20%5Cmathbb%7B1%7D_%7B(s_2%20s_1)%20=%20(s'_2%20s'_1)%7D%20-%20%5Cfrac%7B%5Cexp(A_%7Bs_2%20s_1%7D)%20%5Cexp(A_%7Bs_2%20s'_1%7D)%7D%7B%5B%5Csum_%7Bs_1%7D%20exp(A_%7Bs_2%20s_1%7D)%5D%5E2%7D%20%5Cmathbb%7B1%7D_%7Bs_2%20=%20s'_2%7D%20%5Cright%5D%20%5C%5C%0A=%20dB_%7Bs_3%20s'_2%20s'_1%7D%20%5Cfrac%7B%5Cexp(A_%7Bs'_2%20s'_1%7D)%7D%7B%5Csum_%7Bs_1%7D%5Cexp%7B(A_%7Bs'_2%20s_1%7D)%7D%7D%20-%20%5Csum_%7Bs_2%20s_1%7D%20dB_%7Bs_3%20s_2%20s_1%7D%20%5Cfrac%7B%5Cexp(A_%7Bs_2%20s_1%7D)%20%5Cexp(A_%7Bs_2%20s'_1%7D)%7D%7B%5B%5Csum_%7Bs_1%7D%20exp(A_%7Bs_2%20s_1%7D)%5D%5E2%7D%20%5Cmathbb%7B1%7D_%7Bs_2%20=%20s'_2%7D%0A%5Cend%7Balign%7D"></p>
+<hr>
+<p><img src="https://latex.codecogs.com/png.latex?%5Cbegin%7Balign%7D%0A%5Csum_%7Bs_2%20s_1%7D%20dB_%7Bs_3%20s_2%20s_1%7D%20%5Cfrac%7B%5Cexp(A_%7Bs_2%20s_1%7D)%20%5Cexp(A_%7Bs_2%20s'_1%7D)%7D%7B%5B%5Csum_%7Bs_1%7D%20exp(A_%7Bs_2%20s_1%7D)%5D%5E2%7D%20%5Cmathbb%7B1%7D_%7Bs_2%20=%20s'_2%7D%20=%20%5Csum_%7Bs_1%7D%20dB_%7Bs_3%20s'_2%20s_1%7D%20%5Cfrac%7B%5Cexp(A_%7Bs'_2%20s_1%7D)%20%5Cexp(A_%7Bs'_2%20s'_1%7D)%7D%7B%5B%5Csum_%7Bs_1%7D%20exp(A_%7Bs'_2%20s_1%7D)%5D%5E2%7D%20%5C%5C%0A=%20%5Cfrac%7B%5Cexp(A_%7Bs'_2%20s'_1%7D)%7D%7B%5B%5Csum_%7Bs_1%7D%20exp(A_%7Bs'_2%20s_1%7D)%5D%5E2%7D%20%5Csum_%7Bs_1%7D%20%5BdB_%7Bs_3%20s'_2%20s_1%7D%20%5Cexp(A_%7Bs'_2%20s_1%7D)%5D%0A%5Cend%7Balign%7D"></p>
+<hr>
+<p><img src="https://latex.codecogs.com/png.latex?%5Cbegin%7Balign%7D%0A%5Cfrac%7B%5Cpartial%20O_%7Bs_3%7D%7D%7B%5Cpartial%20A_%7Bs'_2%20s'_1%7D%7D%0A=%20dB_%7Bs_3%20s'_2%20s'_1%7D%20%5Cfrac%7B%5Cexp(A_%7Bs'_2%20s'_1%7D)%7D%7B%5Csum_%7Bs_1%7D%5Cexp%7B(A_%7Bs'_2%20s_1%7D)%7D%7D%20-%20%5Cfrac%7B%5Cexp(A_%7Bs'_2%20s'_1%7D)%7D%7B%5B%5Csum_%7Bs_1%7D%20exp(A_%7Bs'_2%20s_1%7D)%5D%5E2%7D%20%5Csum_%7Bs_1%7D%20%5BdB_%7Bs_3%20s'_2%20s_1%7D%20%5Cexp(A_%7Bs'_2%20s_1%7D)%5D%20%5C%5C%0A=%20dB_%7Bs_3%20s'_2%20s'_1%7D%20B_%7Bs'_2%20s'_1%7D%20-%20B_%7Bs'_2%20s'_1%7D%5Cfrac%7B1%7D%7B%5Csum_%7Bs_1%7D%20exp(A_%7Bs'_2%20s_1%7D)%7D%20%5Csum_%7Bs_1%7D%20%5BdB_%7Bs_3%20s'_2%20s_1%7D%20%5Cexp(A_%7Bs'_2%20s_1%7D)%5D%20%5C%5C%0A=%20dB_%7Bs_3%20s'_2%20s'_1%7D%20B_%7Bs'_2%20s'_1%7D%20-%20B_%7Bs'_2%20s'_1%7D%20%5Csum_%7Bs_1%7D%20%5BdB_%7Bs_3%20s'_2%20s_1%7D%20B_%7Bs'_2%20s_1%7D%5D%20=%20B_%7Bs'_2%20s'_1%7D%20%5BdB_%7Bs_3%20s'_2%20s'_1%7D%20-%20%5Csum_%7Bs_1%7D%20%5BdB_%7Bs_3%20s'_2%20s_1%7D%20B_%7Bs'_2%20s_1%7D%5D%5D%0A%5Cend%7Balign%7D"></p>
+<hr>
+<blockquote class="blockquote">
+<p><img src="https://latex.codecogs.com/png.latex?%5Cbegin%7Balign%7D%0A%5Cfrac%7B%5Cpartial%20O_%7Bs_3%7D%7D%7B%5Cpartial%20A_%7Bs'_2%20s'_1%7D%7D%20=%20B_%7Bs'_2%20s'_1%7D%20%5Cleft%5BdB_%7Bs_3%20s'_2%20s'_1%7D%20-%20%5Csum_%7Bs_1%7D%20dB_%7Bs_3%20s'_2%20s_1%7D%20B_%7Bs'_2%20s_1%7D%5Cright%5D%0A%5Cend%7Balign%7D"></p>
+</blockquote>
+</section>
+</section>
+</section>
+<section id="application-in-attention-specialize-the-expressions" class="level2">
+<h2 class="anchored" data-anchor-id="application-in-attention-specialize-the-expressions">Application in Attention: Specialize the Expressions</h2>
+<section id="setup" class="level3">
+<h3 class="anchored" data-anchor-id="setup">Setup:</h3>
+<p><img src="https://latex.codecogs.com/png.latex?%5Cbegin%7Balign%7D%0AP_%7Bij%7D%20=%20softmax(S_%7Bij%7D)%20%5C%5C%0AS_%7Bij%7D%20%5Cin%20%5Cmathbb%7BR%7D%5E%7BM%20%5Ctimes%20N%7D%20%5C%5C%0AP_%7Bij%7D%20%5Cin%20%5Cmathbb%7BR%7D%5E%7BM%20%5Ctimes%20N%7D%20%5C%5C%0AO_%7B%5Cphi%7D%20%5Cin%20%5Cmathbb%7BR%7D%20%5C%5C%0AdP_%7B%5Cphi%20ij%7D%20=%20%5Cfrac%7B%5Cpartial%20O_%7B%5Cphi%7D%7D%7B%5Cpartial%20P_%7Bij%7D%7D%20%5Cin%20%5Cmathbb%7BR%7D%5E%7B%5Cphi%20%5Ctimes%20M%20%5Ctimes%20N%7D%20%5Cimplies%20%5Ctext%7BKnown%7D%0A%5Cend%7Balign%7D"></p>
+</section>
+<section id="differentiation" class="level3">
+<h3 class="anchored" data-anchor-id="differentiation">Differentiation:</h3>
+<p><img src="https://latex.codecogs.com/png.latex?%5Cbegin%7Balign%7D%0A%5Cfrac%7B%5Cpartial%20O_%7B%5Cphi%7D%7D%7B%5Cpartial%20S_%7Bi'j'%7D%7D%20=%20%5Csum_%7Bij%7D%20%5Cfrac%7B%5Cpartial%20O_%7B%5Cphi%7D%7D%7B%5Cpartial%20P_%7Bij%7D%7D%5Cfrac%7B%5Cpartial%20P_%7Bij%7D%7D%7B%5Cpartial%20S_%7Bi'j'%7D%7D%20=%20P_%7Bi'j'%7D%20%5Cleft%5BdP_%7B%5Cphi%20i'j'%7D%20-%20%5Csum_%7Bj%7D%20dP_%7B%5Cphi%20i'j%7D%20P_%7Bi'j%7D%20%5Cright%5D%20%5C%5C%0A=%20P_%7Bi'j'%7D%20%5Cleft%5BdP_%7Bi'j'%7D%20-%20%5Csum_%7Bj%7D%20dP_%7Bi'j%7D%20P_%7Bi'j%7D%20%5Cright%5D%20=%20P_%7Bi'j'%7D%20%5Cleft%5BdP_%7Bi'j'%7D%20-%20dP_%7Bi':%7D%5ET%20%5Ccirc%20P_%7Bi':%7D%20%5Cright%5D%20%5C%5C%0A=%20P%20%5Ctimes%20%5Cleft%5BdP%20-%20BMM(dP_%7Bi'1j,%20P_%7Bi'j1%7D%7D)%20%5Cright%5D%0A%5Cend%7Balign%7D"></p>
+<blockquote class="blockquote">
+<p><img src="https://latex.codecogs.com/png.latex?%5Cbegin%7Balign%7D%0A%5Cfrac%7B%5Cpartial%20O_%7B%5Cphi%7D%7D%7B%5Cpartial%20S_%7Bi'j'%7D%7D%20=%20P_%7Bi'j'%7D%20%5Cleft%5BdP_%7Bi'j'%7D%20-%20dP_%7Bi':%7D%5ET%20%5Ccirc%20P_%7Bi':%7D%20%5Cright%5D%0A%5Cend%7Balign%7D"></p>
+</blockquote>
+
+
+</section>
+</section>
+
+<a onclick="window.scrollTo(0, 0); return false;" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a> ]]></description>
+  <category>Softmax</category>
+  <category>Autograd</category>
+  <category>MATH</category>
+  <category>Triton</category>
+  <category>CUDA</category>
+  <guid>https://shivampr21.github.io/posts/softmax-30-3-2025-kernelized/</guid>
+  <pubDate>Sat, 29 Mar 2025 18:30:00 GMT</pubDate>
+</item>
+<item>
+  <title>FlashAttention Kernel: Forward Pass (MATH)</title>
+  <dc:creator>Shivam Pandey</dc:creator>
+  <link>https://shivampr21.github.io/posts/flash-30-3-2025-kernelized/</link>
+  <description><![CDATA[ 
+
+
+
+
+<!-- # Flash Attention Kernel: Math & Implementation -->
+<ul>
+<li><p><img src="https://latex.codecogs.com/png.latex?A%20%5Cin%20%5Cmathbb%7BR%7D%5E%7Bs_2%20s_1%7D"> where <img src="https://latex.codecogs.com/png.latex?s_2"> and <img src="https://latex.codecogs.com/png.latex?s_1"> are the index set, for example in a 5D tensor <img src="https://latex.codecogs.com/png.latex?A%20%5Cin%20%5Cmathbb%7BR%7D%5E%7Bijklm%7D"> a possible index set could be <img src="https://latex.codecogs.com/png.latex?s_2%20=%20%5C%7B%20i,%20j%20%5C%7D"> and <img src="https://latex.codecogs.com/png.latex?s_1%20=%20%5C%7Bk,%20l,%20m%20%5C%7D">.</p></li>
+<li><p><img src="https://latex.codecogs.com/png.latex?B_%7Bs_2%20s_1%7D%20=%20flash_%7Bs_1%7D(Q_%7Bs_2%20s_1%7D,%20K_%7Bs_3%20s_1%7D,%20V_%7Bs_3%20s_1%7D)"> is a <strong>flash attention</strong> operation over <strong>s1 index set of tensor set <img src="https://latex.codecogs.com/png.latex?%3CQ,%20K,%20V%3E"></strong>, and the resulting index set is the index set of <img src="https://latex.codecogs.com/png.latex?Q"> <em>s.t.</em> <img src="https://latex.codecogs.com/png.latex?B%20%5Cin%20%5Cmathbb%7BR%7D%5E%7Bs_2%20s_1%7D"></p></li>
+</ul>
+<section id="attention-operation" class="level2">
+<h2 class="anchored" data-anchor-id="attention-operation">Attention Operation</h2>
+<p>For this exercise we will simplify the target index sets to match the most common setup, i.e.&nbsp;<img src="https://latex.codecogs.com/png.latex?Q_%7Bs_2%20s_1%7D%20%5Cin%20%5Cmathbb%7BR%7D%5E%7B%5BM%20%5Ctimes%20d%5D%7D">, <img src="https://latex.codecogs.com/png.latex?K_%7Bs_3%20s_1%7D%20%5Cin%20%5Cmathbb%7BR%7D%5E%7B%5BN%20%5Ctimes%20d%5D%7D">, <img src="https://latex.codecogs.com/png.latex?V_%7Bs_3%20s_1%7D%20%5Cin%20%5Cmathbb%7BR%7D%5E%7B%5BN%20%5Ctimes%20d%5D%7D"></p>
+<blockquote class="blockquote">
+<p>Note: In this doc, whenever we have to denote the exact dimensions instead of index set it will be denoted as <img src="https://latex.codecogs.com/png.latex?.%5E%7B%5B...%20%5Ctimes%20...%20%5Ctimes%20%5Cdots%5D%7D"> where <img src="https://latex.codecogs.com/png.latex?%5Ctimes"> symbol separates across different index sets.</p>
+</blockquote>
+<p>Thus our operation becomes:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%5Cbegin%7Balign%7D%0AB_%7Bs_2%20s_1%7D%20=%20attention_%7Bs_1%7D(Q_%7Bs_2%20s_1%7D,%20K_%7Bs_3%20s_1%7D,%20V_%7Bs_3%20s_1%7D)%20%5C%5C%0AB%5E%7B%5BM%20%5Ctimes%20d%5D%7D%20=%20attention_%7Bd%7D(Q%5E%7B%5BM%20%5Ctimes%20d%5D%7D,%20K%5E%7B%5BN%20%5Ctimes%20d%5D%7D,%20V%5E%7B%5BN%20%5Ctimes%20d%5D%7D)%0A%5Cend%7Balign%7D"></p>
+<hr>
+<p><img src="https://latex.codecogs.com/png.latex?%5Cbegin%7Balign%7D%0AS%5E%7B%5BM%20%5Ctimes%20N%5D%7D%20=%20Q%20@%20K%5ET%20=%20Q%20*_%7B(M%20%5Ctimes%20d,%20N%20%5Ctimes%20d,%20M%20%5Ctimes%20N)%7D%20K%20%5Cin%20%5Cmathbb%7BR%7D%5E%7B%5BM%20%5Ctimes%20N%5D%7D%20%5C%5C%0AS_%7Brmax%7D%5E%7BM%7D%20=%20%5Cmax_%7BN%7D%20S%5E%7B%5BM%20%5Ctimes%20N%5D%7D%20%5Cin%20%5Cmathbb%7BR%7D%5E%7BM%7D%20%5C%5C%0AS_%7Brm%7D%5E%7B%5Bm,%20n%5D%7D%20=%20S%5E%7B%5Bm,%20n%5D%7D%20-%20S_%7Brmax%7D%5E%7Bm%7D%20%5Cforall%20%5Bm,%20n%5D%20%5Cin%20%5BM%20%5Ctimes%20N%5D%20%20%5C%5C%0AP%5E%7B%5BM%20%5Ctimes%20N%5D%7D%20=%20softmax_%7BN%7D(S_%7Brm%7D%5E%7B%5BM%20%5Ctimes%20N%5D%7D)%20%5C%5C%0AO%5E%7B%5BM%20%5Ctimes%20d%5D%7D%20=%20P%20@%20V%20=%20P%20*_%7B(M%20%5Ctimes%20N,%20N%20%5Ctimes%20d,%20M%20%5Ctimes%20d)%7D%20V%20%5Cin%20%5Cmathbb%7BR%7D%5E%7B%5BM%20%5Ctimes%20d%5D%7D%0A%5Cend%7Balign%7D"></p>
+<blockquote class="blockquote">
+<p>Note: Notation abuse -&gt; <img src="https://latex.codecogs.com/png.latex?O%20%5Ciff%20B"></p>
+</blockquote>
+<section id="simplifying-forward-pass" class="level3">
+<h3 class="anchored" data-anchor-id="simplifying-forward-pass">Simplifying Forward Pass</h3>
+<p><img src="https://latex.codecogs.com/png.latex?%5Cbegin%7Balign%7D%0AP%5E%7B%5Bm,%20n%5D%7D%20=%20%5Cfrac%7B%5Cexp(S%5E%7B%5Bm,%20n%5D%7D%20-%20%5Cmax_%7Bn%7D(S%5E%7B%5Bm,%20n%5D%7D))%7D%7B%5Csum_n%20%5Cexp(S%5E%7B%5Bm,%20n%5D%7D%20-%20%5Cmax_%7Bn%7D(S%5E%7B%5Bm,%20n%5D%7D))%7D%20=%20%5Cfrac%7B%5Cexp(S%5E%7B%5Bm,%20n%5D%7D)%7D%7B%5Csum_n%20%5Cexp(S%5E%7B%5Bm,%20n%5D%7D)%7D%0A%5Cend%7Balign%7D"></p>
+<blockquote class="blockquote">
+<p>Note: The independence over M in softmax the only aggregation is required over N dimension</p>
+</blockquote>
+<section id="computation-in-chunk" class="level4">
+<h4 class="anchored" data-anchor-id="computation-in-chunk">Computation in chunk</h4>
+<p>Here we will first look at what is reuired to generate the output for a single query i.e.&nbsp;<img src="https://latex.codecogs.com/png.latex?O%5E%7B%5Bm,%20d%5D%7D"></p>
+<p><img src="https://latex.codecogs.com/png.latex?%5Cbegin%7Balign%7D%0AO%5E%7B%5Bm,%20d%5D%7D%20=%20P_m%20*_%7B(N,%20N%20%5Ctimes%20d,%20d)%7D%20V%20=%20%5Csum_n%20P%5E%7B%5Bm,%20n%5D%7D%20%5Ccdot%20V%5E%7B%5Bn,%20d%5D%7D%20%5C%5C%0AP%5E%7B%5Bm,%20n%5D%7D%20=%20softmax_%7Bn%7D(S%5E%7B%5Bm,%20n%5D%7D)%20=%20%5Cfrac%7B%5Cexp(S%5E%7B%5Bm,%20n%5D%7D)%7D%7B%5Csum_n%20%5Cexp(S%5E%7B%5Bm,%20n%5D%7D)%7D%20%5C%5C%0AO%5E%7B%5Bm,%20d%5D%7D%20=%20%5Csum_n%20P%5E%7B%5Bm,%20n%5D%7D%20%5Ccdot%20V%5E%7B%5Bn,%20d%5D%7D%20=%20%5Csum_n%20%5Cfrac%7B%5Cexp(S%5E%7B%5Bm,%20n%5D%7D)%7D%7B%5Csum_n%20%5Cexp(S%5E%7B%5Bm,%20n%5D%7D)%7D%20%5Ccdot%20V%5E%7B%5Bn,%20d%5D%7D%20%5C%5C%0A=%20%5Cfrac%7B1%7D%7B%5Csum_n%20%5Cexp(S%5E%7B%5Bm,%20n%5D%7D)%7D%5Csum_n%20%5Cexp(S%5E%7B%5Bm,%20n%5D%7D)%20%5Ccdot%20V%5E%7B%5Bn,%20d%5D%7D%0A%5Cend%7Balign%7D"></p>
+<p>We want to process <img src="https://latex.codecogs.com/png.latex?O%5E%7B%5Bm,%20d%5D%7D%20=%20%5Csum_N%20%5Cdots"> over <img src="https://latex.codecogs.com/png.latex?n"> sequentially to avoid whole sequence loading.</p>
+<p>for the sequence just processed till <img src="https://latex.codecogs.com/png.latex?n%20=%20j"> we can write: <img src="https://latex.codecogs.com/png.latex?%5Cbegin%7Balign%7D%0AO%5E%7B%5Bm,%20d%5D%7D_j%20=%20%5Cfrac%7B1%7D%7B%5Csum_%7Bn%5Cin%5B0%20%5Cdots%20j%5D%7D%20%5Cexp(S%5E%7B%5Bm,%20n%5D%7D)%7D%5Csum_%7Bn%5Cin%5B0%20%5Cdots%20j%5D%7D%20%5Cexp(S%5E%7B%5Bm,%20n%5D%7D)%20%5Ccdot%20V%5E%7B%5Bn,%20d%5D%7D%20=%20%5Cfrac%7B1%7D%7Bl_j%7D%20u_j%0A%5Cend%7Balign%7D"></p>
+<p>Let’s say we proceed by a single setp <img src="https://latex.codecogs.com/png.latex?n%20=%20j+1">: <img src="https://latex.codecogs.com/png.latex?%5Cbegin%7Balign%7D%0AO%5E%7B%5Bm,%20d%5D%7D_%7Bj+1%7D%20=%20%5Cfrac%7B1%7D%7B%5Csum_%7Bn%5Cin%5B0%20%5Cdots%20j,%20j+1%5D%7D%20%5Cexp(S%5E%7B%5Bm,%20n%5D%7D)%7D%5Csum_%7Bn%5Cin%5B0%20%5Cdots%20j,%20j+1%5D%7D%20%5Cexp(S%5E%7B%5Bm,%20n%5D%7D)%20%5Ccdot%20V%5E%7B%5Bn,%20d%5D%7D%5C%5C%0A=%20%5Cfrac%7B1%7D%7Bl_j%20+%20%5Cexp(S%5E%7B%5Bm,%20n=j+1%5D%7D)%7D%20(u_j%20+%20%5Cexp(S%5E%7B%5Bm,%20n=j+1%5D%7D)%20%5Ccdot%20V%5E%7B%5Bn=j+1,%20d%5D%7D)%20%5C%5C%0A=%20%5Cfrac%7BO%5E%7B%5Bm,%20d%5D%7D_%7Bj%7D%20*%20l_j%7D%7Bl_%7Bj+1%7D%7D%20+%20%5Cfrac%7B%5Cexp(S%5E%7B%5Bm,%20n=j+1%5D%7D)%20%5Ccdot%20V%5E%7B%5Bn=j+1,%20d%5D%7D%7D%7Bl_%7Bj+1%7D%7D%0A%5Cend%7Balign%7D"></p>
+<p>Thus we can compute the output simply by iterating over the <img src="https://latex.codecogs.com/png.latex?N"> dimension for <img src="https://latex.codecogs.com/png.latex?O%5E%7Bm,%20d%7D"> the final expression</p>
+<p><img src="https://latex.codecogs.com/png.latex?%5Cbegin%7Balign%7D%0AO%5E%7B%5Bm,%20d%5D%7D_%7B0%7D%20=%20%20%5Cfrac%7B%5Cexp(S%5E%7B%5Bm,%20n=0%5D%7D)%20%5Ccdot%20V%5E%7B%5Bn=0,%20d%5D%7D%7D%7Bl_%7B0%7D%7D%5C%5C%0AO%5E%7B%5Bm,%20d%5D%7D_%7Bj+1%7D%20=%20%5Cfrac%7BO%5E%7B%5Bm,%20d%5D%7D_%7Bj%7D%20*%20l_j%7D%7Bl_%7Bj+1%7D%7D%20+%20%5Cfrac%7B%5Cexp(S%5E%7B%5Bm,%20n=j+1%5D%7D)%20%5Ccdot%20V%5E%7B%5Bn=j+1,%20d%5D%7D%7D%7Bl_%7Bj+1%7D%7D%20%5C%5C%0Al_0%20=%20exp(S%5E%7B%5Bm,%20n=0%5D%7D)%20%5C%5C%0Al_%7Bj+1%7D%20=%20l_j%20+%20exp(S%5E%7B%5Bm,%20n=j+1%5D%7D)%0A%5Cend%7Balign%7D"></p>
+</section>
+<section id="wtf-exp-can-explode-coz-of-high-multiplication-values" class="level4">
+<h4 class="anchored" data-anchor-id="wtf-exp-can-explode-coz-of-high-multiplication-values">WTF: <img src="https://latex.codecogs.com/png.latex?%5Cexp"> can explode coz of high multiplication values</h4>
+<p><strong>max</strong> operation is used for numerical stability of the <strong>softmax</strong> especially keeping <strong>exp</strong> from exploding.</p>
+<p>Here next we will try to encorporate this stabilization technique in the above derived framework.</p>
+<p><img src="https://latex.codecogs.com/png.latex?%5Cbegin%7Balign%7D%0Am_0%20=%20S%5E%7B%5Bm,%20n=0%5D%7D%20%5C%5C%0Am_%7Bj+1%7D%20=%20%5Cmax(m_j,%20S%5E%7B%5Bm,%20n=j+1%5D%7D)%20%5C%5C%0Al_0%20=%20%5Cexp(S%5E%7B%5Bm,%20n=0%5D%7D%20-%20m_0)%20%5C%5C%0Al_%7Bj+1%7D%20=%20%5Csum_%7Bn%5Cin%5B0%20%5Cdots%20j,%20j+1%5D%7D%5Cexp(S%5E%7B%5Bm,%20n%5D%7D%20-%20m_%7Bj+1%7D)%20%5C%5C%0Al_%7Bj+1%7D%20=%20%5Cfrac%7Bexp(-m_%7Bj%7D)%7D%7B%5Cexp(m_%7Bj+1%7D%20-%20m_%7Bj%7D)%7D%5Csum_%7Bn%5Cin%5B0%20%5Cdots%20j%5D%7D%5Cexp(S%5E%7B%5Bm,%20n%5D%7D)%20+%20%5Cexp(S%5E%7B%5Bm,%20n=j+1%5D%7D%20-%20m_%7Bj+1%7D)%20%5C%5C%0Al_%7Bj+1%7D%20=%20l_%7Bj%7D%5Cexp(m_%7Bj%7D%20-%20m_%7Bj+1%7D)%20+%20%5Cexp(S%5E%7B%5Bm,%20n=j+1%5D%7D%20-%20m_%7Bj+1%7D)%20%5C%5C%0AO%5E%7B%5Bm,%20d%5D%7D_%7B0%7D%20=%20%5Cfrac%7B%5Cexp(S%5E%7B%5Bm,%20n=0%5D%7D%20-%20m_%7B0%7D)%20%5Ccdot%20V%5E%7B%5Bn=0,%20d%5D%7D%7D%7Bl_%7B0%7D%7D%20%5C%5C%0AO%5E%7B%5Bm,%20d%5D%7D_%7Bj+1%7D%20=%20%5Cfrac%7BO%5E%7B%5Bm,%20d%5D%7D_%7Bj%7D%20*%20l_j%7D%7Bl_%7Bj+1%7D%7D%20+%20%5Cfrac%7B%5Cexp(S%5E%7B%5Bm,%20n=j+1%5D%7D%20-%20m_%7Bj+1%7D)%20%5Ccdot%20V%5E%7B%5Bn=j+1,%20d%5D%7D%7D%7Bl_%7Bj+1%7D%7D%20%5C%5C%0A%5Cend%7Balign%7D"></p>
+
+
+</section>
+</section>
+</section>
+
+<a onclick="window.scrollTo(0, 0); return false;" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a> ]]></description>
+  <category>FlashAttention</category>
+  <category>Transformers</category>
+  <category>Attention</category>
+  <category>Autograd</category>
+  <category>MATH</category>
+  <guid>https://shivampr21.github.io/posts/flash-30-3-2025-kernelized/</guid>
+  <pubDate>Sat, 29 Mar 2025 18:30:00 GMT</pubDate>
+</item>
+<item>
+  <title>FlashAttention Kernel: Backward Pass (MATH)</title>
+  <dc:creator>Shivam Pandey</dc:creator>
+  <link>https://shivampr21.github.io/posts/flash-bwd-30-3-2025-kernelized/</link>
+  <description><![CDATA[ 
+
+
+
+
+<section id="preliminary" class="level2">
+<h2 class="anchored" data-anchor-id="preliminary">Preliminary</h2>
+<ul>
+<li><p><img src="https://latex.codecogs.com/png.latex?A%20%5Cin%20%5Cmathbb%7BR%7D%5E%7Bs_2%20s_1%7D"> where <img src="https://latex.codecogs.com/png.latex?s_2"> and <img src="https://latex.codecogs.com/png.latex?s_1"> are the index set, for example in a 5D tensor <img src="https://latex.codecogs.com/png.latex?A%20%5Cin%20%5Cmathbb%7BR%7D%5E%7Bijklm%7D"> a possible index set could be <img src="https://latex.codecogs.com/png.latex?s_2%20=%20%5C%7B%20i,%20j%20%5C%7D"> and <img src="https://latex.codecogs.com/png.latex?s_1%20=%20%5C%7Bk,%20l,%20m%20%5C%7D">.</p></li>
+<li><p><img src="https://latex.codecogs.com/png.latex?B_%7Bs_2%20s_1%7D%20=%20flash_%7Bs_1%7D(Q_%7Bs_2%20s_1%7D,%20K_%7Bs_3%20s_1%7D,%20V_%7Bs_3%20s_1%7D)"> is a <strong>flash attention</strong> operation over <strong>s1 index set of tensor set <img src="https://latex.codecogs.com/png.latex?%3CQ,%20K,%20V%3E"></strong>, and the resulting index set is the index set of <img src="https://latex.codecogs.com/png.latex?Q"> <em>s.t.</em> <img src="https://latex.codecogs.com/png.latex?B%20%5Cin%20%5Cmathbb%7BR%7D%5E%7Bs_2%20s_1%7D"></p></li>
+</ul>
+</section>
+<section id="attention-operation" class="level2">
+<h2 class="anchored" data-anchor-id="attention-operation">Attention Operation</h2>
+<p>For this exercise we will simplify the target index sets to match the most common setup, i.e.&nbsp;<img src="https://latex.codecogs.com/png.latex?Q_%7Bs_2%20s_1%7D%20%5Cin%20%5Cmathbb%7BR%7D%5E%7B%5BM%20%5Ctimes%20d%5D%7D">, <img src="https://latex.codecogs.com/png.latex?K_%7Bs_3%20s_1%7D%20%5Cin%20%5Cmathbb%7BR%7D%5E%7B%5BN%20%5Ctimes%20d%5D%7D">, <img src="https://latex.codecogs.com/png.latex?V_%7Bs_3%20s_1%7D%20%5Cin%20%5Cmathbb%7BR%7D%5E%7B%5BN%20%5Ctimes%20d%5D%7D"></p>
+<blockquote class="blockquote">
+<p>Note: In this doc, whenever we have to denote the exact dimensions instead of index set it will be denoted as <img src="https://latex.codecogs.com/png.latex?.%5E%7B%5B...%20%5Ctimes%20...%20%5Ctimes%20%5Cdots%5D%7D"> where <img src="https://latex.codecogs.com/png.latex?%5Ctimes"> symbol separates across different index sets.</p>
+</blockquote>
+<p>Thus our operation becomes:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%5Cbegin%7Balign%7D%0AB_%7Bs_2%20s_1%7D%20=%20attention_%7Bs_1%7D(Q_%7Bs_2%20s_1%7D,%20K_%7Bs_3%20s_1%7D,%20V_%7Bs_3%20s_1%7D)%20%5C%5C%0AB%5E%7B%5BM%20%5Ctimes%20d%5D%7D%20=%20attention_%7Bd%7D(Q%5E%7B%5BM%20%5Ctimes%20d%5D%7D,%20K%5E%7B%5BN%20%5Ctimes%20d%5D%7D,%20V%5E%7B%5BN%20%5Ctimes%20d%5D%7D)%0A%5Cend%7Balign%7D"></p>
+<hr>
+<p><img src="https://latex.codecogs.com/png.latex?%5Cbegin%7Balign%7D%0AS%5E%7B%5BM%20%5Ctimes%20N%5D%7D%20=%20Q%20@%20K%5ET%20=%20Q%20*_%7B(M%20%5Ctimes%20d,%20N%20%5Ctimes%20d,%20M%20%5Ctimes%20N)%7D%20K%20%5Cin%20%5Cmathbb%7BR%7D%5E%7B%5BM%20%5Ctimes%20N%5D%7D%20%5C%5C%0AS_%7Brmax%7D%5E%7BM%7D%20=%20%5Cmax_%7BN%7D%20S%5E%7B%5BM%20%5Ctimes%20N%5D%7D%20%5Cin%20%5Cmathbb%7BR%7D%5E%7BM%7D%20%5C%5C%0AS_%7Brm%7D%5E%7B%5Bm,%20n%5D%7D%20=%20S%5E%7B%5Bm,%20n%5D%7D%20-%20S_%7Brmax%7D%5E%7Bm%7D%20%5Cforall%20%5Bm,%20n%5D%20%5Cin%20%5BM%20%5Ctimes%20N%5D%20%20%5C%5C%0AP%5E%7B%5BM%20%5Ctimes%20N%5D%7D%20=%20softmax_%7BN%7D(S_%7Brm%7D%5E%7B%5BM%20%5Ctimes%20N%5D%7D)%20%5C%5C%0AO%5E%7B%5BM%20%5Ctimes%20d%5D%7D%20=%20P%20@%20V%20=%20P%20*_%7B(M%20%5Ctimes%20N,%20N%20%5Ctimes%20d,%20M%20%5Ctimes%20d)%7D%20V%20%5Cin%20%5Cmathbb%7BR%7D%5E%7B%5BM%20%5Ctimes%20d%5D%7D%0A%5Cend%7Balign%7D"></p>
+<blockquote class="blockquote">
+<p>Note: Notation abuse -&gt; <img src="https://latex.codecogs.com/png.latex?O%20%5Ciff%20B"></p>
+</blockquote>
+<p><strong>For detailed Forward pass derivation please refer to my previous blog: <a href="../../posts/flash-30-3-2025-kernelized">FlashAttention Kernel: Forward Pass (MATH)</a></strong></p>
+</section>
+<section id="backward-mode-autodiff-pass" class="level2">
+<h2 class="anchored" data-anchor-id="backward-mode-autodiff-pass">Backward (mode autodiff) Pass:</h2>
+<p><img src="https://latex.codecogs.com/png.latex?%5Cbegin%7Balign%7D%0AB_%7Bs_2%20s_1%7D%20%5Ciff%20B%5E%7B%5BM%20%5Ctimes%20d%5D%7D%20=%20attention_%7Bd%7D(Q%5E%7B%5BM%20%5Ctimes%20d%5D%7D,%20K%5E%7B%5BN%20%5Ctimes%20d%5D%7D,%20V%5E%7B%5BN%20%5Ctimes%20d%5D%7D)%0A%5Cend%7Balign%7D"></p>
+<p>For a given loss value <img src="https://latex.codecogs.com/png.latex?O_%7Bs_3%20=%20%5Cphi%7D"> and known <img src="https://latex.codecogs.com/png.latex?dB_%7B%5Cphi%20s_2%20s_1%7D%20=%20%5Cfrac%7BdB_%7Bs_2%20s_1%7D%7D%7BdO_%7Bs_3%20=%20%5Cphi%7D%7D"> We need to find out <img src="https://latex.codecogs.com/png.latex?dQ_%7B%5Cphi%20s_2%20s_1%7D">, <img src="https://latex.codecogs.com/png.latex?dK_%7B%5Cphi%20s_3%20s_1%7D">, and <img src="https://latex.codecogs.com/png.latex?dV_%7B%5Cphi%20s_3%20s_1%7D">.</p>
+<p>Here we will directly differentiate the core attention operation without adjusting for numerical stability of exponent (we did so in forward pass to just make computation stable). Here we will first derive the core backward operations and then change it to computation, followed by mitigating any source of numerical instability.</p>
+<section id="dv_phi-s_3-s_1" class="level3">
+<h3 class="anchored" data-anchor-id="dv_phi-s_3-s_1"><img src="https://latex.codecogs.com/png.latex?dV_%7B%5Cphi%20s_3%20s_1%7D">:</h3>
+<p>Consider following op: <img src="https://latex.codecogs.com/png.latex?B_%7Bs_2%20s_1%7D%20=%20%5Csum_%7Bs_3%7D%20P_%7Bs_2%20s_3%7D%20%5Ccdot%20V_%7Bs_3%20s_1%7D%20=%20P%5E%7B%5BM%20%5Ctimes%20N%5D%7D%20@%20V%5E%7B%5BN%20%5Ctimes%20d%5D%7D%20%5Cin%20%5Cmathbb%7BR%7D%5E%7B%5BM%20%5Ctimes%20d%5D%7D_%7Bs_2%20s_1%7D"></p>
+<p><img src="https://latex.codecogs.com/png.latex?%5Cbegin%7Balign%7D%0AdV_%7B%5Cphi%20s'_3%20s'_1%7D%20=%20%5Cfrac%7B%5Cpartial%20O_%7B%5Cphi%7D%7D%7B%5Cpartial%20V_%7Bs'_3%20s'_1%7D%7D%20=%20%5Csum_%7Bs_2%20s_1%7D%20%5Cfrac%7B%5Cpartial%20O_%7B%5Cphi%7D%7D%7B%5Cpartial%20B_%7Bs_2%20s_1%7D%7D%20%5Cfrac%7B%5Cpartial%20B_%7Bs_2%20s_1%7D%7D%7B%5Cpartial%20V_%7Bs'_3%20s'_1%7D%7D%20=%20%5Csum_%7Bs_2%20s_1%7D%20dB_%7Bs_2%20s_1%7D%20%5Cfrac%7B%5Cpartial%20B_%7Bs_2%20s_1%7D%7D%7B%5Cpartial%20V_%7Bs'_3%20s'_1%7D%7D%20%5C%5C%0A%5Cfrac%7B%5Cpartial%20B_%7Bs_2%20s_1%7D%7D%7B%5Cpartial%20V_%7Bs'_3%20s'_1%7D%7D%20=%20%5Csum_%7Bs_3%7D%20P_%7Bs_2%20s_3%7D%20%5Cmathbb%7B1%7D_%7B(s_3%20s_1)%20=%20(s'_3%20s'_1)%7D%20=%20P_%7Bs_2%20s'_3%7D%20%5Cmathbb%7B1%7D_%7Bs_1%20=%20s'_1%7D%20%5C%5C%0A%5Csum_%7Bs_2%20s_1%7D%20dB_%7Bs_2%20s_1%7D%20%5Cfrac%7B%5Cpartial%20B_%7Bs_2%20s_1%7D%7D%7B%5Cpartial%20V_%7Bs'_3%20s'_1%7D%7D%20=%20%5Csum_%7Bs_2%20s_1%7D%20dB_%7Bs_2%20s_1%7D%20P_%7Bs_2%20s'_3%7D%20%5Cmathbb%7B1%7D_%7Bs_1%20=%20s'_1%7D%20=%20%5Csum_%7Bs_2%7D%20dB_%7Bs_2%20s'_1%7D%20P_%7Bs_2%20s'_3%7D%20%5C%5C%0AdV_%7B%5Cphi%20s'_3%20s'_1%7D%20=%20%5Csum_%7Bs_2%20s_1%7D%20dB_%7Bs_2%20s_1%7D%20%5Cfrac%7B%5Cpartial%20B_%7Bs_2%20s_1%7D%7D%7B%5Cpartial%20V_%7Bs'_3%20s'_1%7D%7D%20=%20%5Csum_%7Bs_2%7D%20dB_%7Bs_2%20s'_1%7D%20P_%7Bs_2%20s'_3%7D%20=%20dB%5ET%20%5Ccdot%20P%0A%5Cend%7Balign%7D"></p>
+<blockquote class="blockquote">
+<p>Note: This also provides a crucial propetry of tensor differentiation i.e.&nbsp;for tensor product operation <img src="https://latex.codecogs.com/png.latex?C_%7Bs_2%20s_3%7D%20=%20%5Csum_%7Bs_1%7D%20A_%7Bs_2%20s_1%7D%20B_%7Bs_1%20s_3%7D%20=%20A%20%5Ccdot%20B"> then for a given <img src="https://latex.codecogs.com/png.latex?dC_%7Bs_o%20s_2%20s_3%7D"> the derivative <img src="https://latex.codecogs.com/png.latex?dA_%7Bs_o%20s'_2%20s'_1%7D%20=%20%5Csum_%7Bs_3%7D%20dC_%7Bs_o%20s'_2%20s_3%7D%20B_%7Bs'_1%20s_3%7D"> for a simple matmul i.e.&nbsp;<img src="https://latex.codecogs.com/png.latex?s_o%20=%20%5Cphi,%20s_3%20%5Cin%20%5Cmathbb%7BR%7D,%20s_2%20%5Cin%20%5Cmathbb%7BR%7D,%20s_1%20%5Cin%20%5Cmathbb%7BR%7D"> this operation shrinks to simply <img src="https://latex.codecogs.com/png.latex?dA%20=%20dC%20%5Ccdot%20B%5ET">. Similarly for <img src="https://latex.codecogs.com/png.latex?dB_%7Bs_o%20s'_1%20s'_3%7D%20=%20%5Csum_%7Bs_2%7D%20dC_%7Bs_o%20s_2%20s'_3%7D%20A_%7Bs_2%20s'_1%7D"> for a simple matrix multiplication this would reduce to <img src="https://latex.codecogs.com/png.latex?dB%20=%20dC%5ET%20%5Ccdot%20A"></p>
+</blockquote>
+</section>
+<section id="dp_phi-s_2-s_3" class="level3">
+<h3 class="anchored" data-anchor-id="dp_phi-s_2-s_3"><img src="https://latex.codecogs.com/png.latex?dP_%7B%5Cphi%20s_2%20s_3%7D">:</h3>
+<p>From the formula derived previously <img src="https://latex.codecogs.com/png.latex?dP_%7B%5Cphi%20s'_2%20s'_3%7D%20=%20%5Csum_%7Bs_1%7D%20dB_%7Bs'_2%20s_1%7D%20V_%7Bs'_3%20s_1%7D%20=%20dB%20%5Ccdot%20V%5ET"></p>
+</section>
+<section id="dqkt_phi-s_2-s_3" class="level3">
+<h3 class="anchored" data-anchor-id="dqkt_phi-s_2-s_3"><img src="https://latex.codecogs.com/png.latex?dQK%5ET_%7B%5Cphi%20s_2%20s_3%7D"></h3>
+<p>Here we have encountered <strong>softmax</strong> operation as <img src="https://latex.codecogs.com/png.latex?P_%7Bs_2%20s_3%7D%20=%20softmax_%7Bs_3%7D(S_%7Bs_2%20s_3%7D%20=%20QK%5ET_%7Bs_2%20s_3%7D)"> from the softmax blog we can</p>
+<section id="direct-operation" class="level4">
+<h4 class="anchored" data-anchor-id="direct-operation">Direct Operation:</h4>
+<p><img src="https://latex.codecogs.com/png.latex?%5Cbegin%7Bequation%7D%0AB_%7Bs_2%20s_1%7D%20=%20softmax_%7Bs_1%7D(A_%7Bs_2%20s_1%7D)%0A%5Cend%7Bequation%7D"></p>
+<p>Here <img src="https://latex.codecogs.com/png.latex?O_%7Bs_3%7D"> is the final loss value for which we need to extract the derivatives.</p>
+<p><img src="https://latex.codecogs.com/png.latex?%5Cbegin%7Balign%7D%0A%5Cfrac%7B%5Cpartial%20O_%7Bs_3%7D%7D%7B%5Cpartial%20A_%7Bs'_2%20s'_1%7D%7D%20=%20B_%7Bs'_2%20s'_1%7D%20%5Cleft%5BdB_%7Bs_3%20s'_2%20s'_1%7D%20-%20%5Csum_%7Bs_1%7D%20dB_%7Bs_3%20s'_2%20s_1%7D%20B_%7Bs'_2%20s_1%7D%5Cright%5D%0A%5Cend%7Balign%7D"></p>
+</section>
+<section id="from-the-formula-we-can-say" class="level4">
+<h4 class="anchored" data-anchor-id="from-the-formula-we-can-say">From the formula, we can say:</h4>
+<p><img src="https://latex.codecogs.com/png.latex?%5Cbegin%7Balign%7D%0A%5Cfrac%7B%5Cpartial%20O_%7B%5Cphi%7D%7D%7B%5Cpartial%20QK%5ET_%7Bs'_2%20s'_3%7D%7D%20=%20P_%7Bs'_2%20s'_3%7D%20%5Cleft%5BdP_%7B%5Cphi%20s'_2%20s'_3%7D%20-%20%20%5Csum_%7Bs_3%7D%20dP_%7B%5Cphi%20s'_2%20s_3%7D%20P_%7Bs'_2%20s_3%7D%5Cright%5D%0A%5Cend%7Balign%7D"></p>
+<p>for a simple matmul:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%5Cbegin%7Balign%7D%0A%5Cfrac%7B%5Cpartial%20O_%7B%5Cphi%7D%7D%7B%5Cpartial%20S_%7Bi'j'%7D%7D%20=%20P_%7Bi'j'%7D%20%5Cleft%5BdP_%7Bi'j'%7D%20-%20dP_%7Bi':%7D%5ET%20%5Ccirc%20P_%7Bi':%7D%20%5Cright%5D%20=%20P%20%5Ctimes%20%5Cleft%5BdP%20-%20BMM(dP_%7Bi'1j,%20P_%7Bi'j1%7D%7D)%20%5Cright%5D%0A%5Cend%7Balign%7D"></p>
+</section>
+</section>
+<section id="dq_phi-s_2-s_1-dk_phi-s_2-s_1" class="level3">
+<h3 class="anchored" data-anchor-id="dq_phi-s_2-s_1-dk_phi-s_2-s_1"><img src="https://latex.codecogs.com/png.latex?dQ_%7B%5Cphi%20s_2%20s_1%7D"> &amp; <img src="https://latex.codecogs.com/png.latex?dK_%7B%5Cphi%20s_2%20s_1%7D">:</h3>
+<p><img src="https://latex.codecogs.com/png.latex?S%20=%20QK%5ET"> and we know <img src="https://latex.codecogs.com/png.latex?dS"> thus we can directly write the derivatives of both <img src="https://latex.codecogs.com/png.latex?Q"> and <img src="https://latex.codecogs.com/png.latex?K">.</p>
+<p><img src="https://latex.codecogs.com/png.latex?%5Cbegin%7Balign%7D%0AdQ%20=%20dS%20%5Ccdot%20K%20%5C%5C%0AdK%20=%20dS%5ET%20%5Ccdot%20Q%0A%5Cend%7Balign%7D"></p>
+</section>
+<section id="final-backward-pass-equations" class="level3">
+<h3 class="anchored" data-anchor-id="final-backward-pass-equations">Final Backward Pass Equations:</h3>
+<p><img src="https://latex.codecogs.com/png.latex?%5Cbegin%7Balign%7D%0AdB%20%5Cin%20%5Cmathbb%7BR%7D%5E%7B%5BM%20%5Ctimes%20D%5D%7D,%20%5C%7BQ,%20dQ%5C%7D%20%5Cin%20%5Cmathbb%7BR%7D%5E%7B%5BM%20%5Ctimes%20D%5D%7D,%20%5C%5C%20%5C%7BK,%20dK%5C%7D%20%5Cin%20%5Cmathbb%7BR%7D%5E%7B%5BN%20%5Ctimes%20D%5D%7D,%20%5C%7BV,%20dV%5C%7D%20%5Cin%20%5Cmathbb%7BR%7D%5E%7B%5BN%20%5Ctimes%20D%5D%7D%5C%5C%0A%5Cend%7Balign%7D"></p>
+<hr>
+<p><img src="https://latex.codecogs.com/png.latex?%5Cbegin%7Balign%7D%0AdV%20=%20dB%5ET%20%5Ccdot%20P%20%5C%5C%0AdP%20=%20dB%20%5Ccdot%20V%5ET%20%5C%5C%0AdS_%7Bi'j'%7D%20=%20P_%7Bi'j'%7D%20%5Cleft%5BdP_%7Bi'j'%7D%20-%20dP_%7Bi':%7D%5ET%20%5Ccirc%20P_%7Bi':%7D%20%5Cright%5D%20%5C%5C%0AdQ%20=%20dS%20%5Ccdot%20K%20%5C%5C%0AdK%20=%20dS%5ET%20%5Ccdot%20Q%0A%5Cend%7Balign%7D"></p>
+<section id="expansion-in-dimensions" class="level4">
+<h4 class="anchored" data-anchor-id="expansion-in-dimensions">Expansion in dimensions:</h4>
+<p><img src="https://latex.codecogs.com/png.latex?%5Cbegin%7Balign%7D%0AS_%7Bij%7D%20=%20%5Csum_d%20q_%7Bi%20d%7D%20k_%7Bj%20d%7D%20%5C%5C%0AdV_%7Bj%20d%7D%20=%20dB%5ET%20%5Ccdot%20P%20=%20%5Csum_i%20dB_%7Bi%20d%7D%20P_%7Bi%20j%7D%20=%20%5Csum_i%20dB_%7Bi%20d%7D%20%5Cfrac%7B%5Cexp(S_%7Bi%20j%7D)%7D%7BL_i%7D%20%5C%5C%0AdP_%7Bi%20j%7D%20=%20dB%20%5Ccdot%20V%5ET%20=%20%5Csum_d%20dB_%7Bi%20d%7D%20V_%7Bj%20d%7D%20%5C%5C%0AdS_%7Bi%20j%7D%20=%20P_%7Bi%20j%7D%20%5Cleft%5BdP_%7Bi%20j%7D%20-%20%5Csum_j%20dP_%7Bi%20j%7D%20P_%7Bi%20j%7D%20%5Cright%5D%20%5C%5C%0AdQ_%7Bi%20d%7D%20=%20dS%20%5Ccdot%20K%20=%20%5Csum_%7Bj%7D%20dS_%7Bi%20j%7D%20K_%7Bj%20d%7D%5C%5C%0AdK_%7Bj%20d%7D%20=%20dS%5ET%20%5Ccdot%20Q%20=%20%5Csum_%7Bi%7D%20dS_%7Bi%20j%7D%20Q_%7Bi%20d%7D%0A%5Cend%7Balign%7D"></p>
+</section>
+<section id="abstract-away-d-dimension" class="level4">
+<h4 class="anchored" data-anchor-id="abstract-away-d-dimension">Abstract away <code>D</code> dimension:</h4>
+<blockquote class="blockquote">
+<p>In a future blog we will see that this is natural to do computation along <code>D</code> (embedding) dimension as all of the computations are independent of each other in this dimension.</p>
+</blockquote>
+<p><img src="https://latex.codecogs.com/png.latex?%5Cbegin%7Balign%7D%0AS_%7Bij%7D%20=%20q_i%20%5Ccirc%20k_j%20%5C%5C%0AdV_j%20=%20%5Csum_i%20dB_%7Bi%20d%7D%20%5Cfrac%7B%5Cexp(q_i%20%5Ccirc%20k_j)%7D%7BL_i%7D%20%5C%5C%0AdP_%7Bi%20j%7D%20=%20dB_i%20%5Ccirc%20V_j%20%5C%5C%0AdS_%7Bi%20j%7D%20=%20P_%7Bi%20j%7D%20%5Cleft%5BdP_%7Bi%20j%7D%20-%20%5Csum_j%20dP_%7Bi%20j%7D%20P_%7Bi%20j%7D%20%5Cright%5D%20%5C%5C%0AdQ_i%20=%20dS_i%20%5Ccirc%20K_j%20%5C%5C%0AdK_j%20=%20dS%5ET_j%20%5Ccirc%20Q_i%20%5C%5C%0A%5Cend%7Balign%7D"></p>
+<hr>
+<p><img src="https://latex.codecogs.com/png.latex?%5Cbegin%7Balign%7D%0A%5Csum_j%20dP_%7Bi%20j%7D%20P_%7Bi%20j%7D%20=%20%5Csum_j%20%5Cbig(%5Csum_d%20dB_%7Bi%20d%7D%20V_%7Bj%20d%7D%5Cbig)%20P_%7Bi%20j%7D%20=%20%5Csum_j%20%5Csum_d%20dB_%7Bi%20d%7D%20V_%7Bj%20d%7D%20P_%7Bi%20j%7D%20%5C%5C%0A=%20%5Csum_d%20%5Csum_j%20dB_%7Bi%20d%7D%20V_%7Bj%20d%7D%20P_%7Bi%20j%7D%20=%20%5Csum_d%20dB_%7Bi%20d%7D%20%5Csum_j%20V_%7Bj%20d%7D%20P_%7Bi%20j%7D%20=%20%5Csum_d%20dB_%7Bi%20d%7D%20B_%7Bi%20d%7D%0A%5Cend%7Balign%7D"></p>
+<p><img src="https://latex.codecogs.com/png.latex?%5Cbegin%7Balign%7D%0AS_%7Bij%7D%20=%20q_i%20%5Ccirc%20k_j%20%5C%5C%0AdV_j%20=%20%5Csum_i%20dB_%7Bi%20d%7D%20%5Cfrac%7B%5Cexp(q_i%20%5Ccirc%20k_j)%7D%7BL_i%7D%20%5C%5C%0AdP_%7Bi%20j%7D%20=%20dB_i%20%5Ccirc%20V_j%20%5C%5C%0AdS_%7Bi%20j%7D%20=%20P_%7Bi%20j%7D%20%5Cleft%5BdP_%7Bi%20j%7D%20-%20dB_i%20%5Ccirc%20B_i%20%5Cright%5D%20%5C%5C%0AdQ_i%20=%20dS_i%20%5Ccirc%20K_j%20%5C%5C%0AdK_j%20=%20dS%5ET_j%20%5Ccirc%20Q_i%20%5C%5C%0A%5Cend%7Balign%7D"></p>
+
+
+</section>
+</section>
+</section>
+
+<a onclick="window.scrollTo(0, 0); return false;" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a> ]]></description>
+  <category>FlashAttention</category>
+  <category>Transformers</category>
+  <category>Attention</category>
+  <category>Autograd</category>
+  <category>MATH</category>
+  <guid>https://shivampr21.github.io/posts/flash-bwd-30-3-2025-kernelized/</guid>
+  <pubDate>Sat, 29 Mar 2025 18:30:00 GMT</pubDate>
+</item>
+</channel>
+</rss>
