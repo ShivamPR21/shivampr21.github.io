@@ -1,0 +1,66 @@
+# Shivam Pandey
+
+
+<div class="columns">
+
+<div class="column" width="70%">
+
+Welcome to my site! I’m **Shivam Pandey**, a tech explorer dedicated to
+advancing *AI’s explainability and its ability to generalize across
+tasks with minimal data*.
+
+## Research Orientation: *\[WIP\]*
+
+**Scaling computes, not comprehension.**
+
+> Even massive compute and oceans of data only deliver brute-force
+> wins—they scale performance, not true insight. These systems remain
+> data inefficient and fail to generalize, missing the mark on real
+> intelligence.
+
+Currently I’m working on **Quantifying the Intelligence-Compute
+Decoupling in Modern AI Systems**.
+
+## [KERNELIZED](./kernelized.qmd)
+
+**KERNELIZED** is a blog series around exploring the territory of
+**Modern Compute for AI** from both algorithmic and infrastructure point
+of view. Some of the initial goal for this blog series includes:
+
+1.  Easy scaling of new AI algorithms to modern compute hardware
+    (e.g. GPU, TPU, WSE etc.)
+2.  Explore and not Rush: The blogs should be exploratory i.e. instead
+    of providing best practices, it enables the way to get there, while
+    not hindering the potential of the information to be applied to
+    other algorithms.
+3.  The blogs are **$\mu$-BLOGS**: Read time should not exceed more than
+    10 minutes. This particular requirement comes from my personal
+    experience that longer blogs/write-ups hinder information sharing no
+    matter how good it is written.
+4.  Be as raw as possible, no hiding of details in the name of
+    accessibility. Specific writing style is too accessible nowadays,
+    just ask `ChatGPT`, `Claude`, and `DeepSeek-R1` given the link to
+    blog :wink:
+
+## Next
+
+Another blog series will soon be released targeting `AI Explainability`
+and `AI Security`, where the target will be breaking down AI models to
+their core logic and using that information to assess potential security
+issues.
+
+Keep Checking this page for further updates as the Code analysis and
+implementation are dropping next in KERNELIZED series, and other
+upcoming projects.
+
+</div>
+
+<div class="column" width="30%">
+
+![Shivam Pandey](./pandey3.jpg) Shivam Pandey (a.k.a. ShivamPR21)
+
+</div>
+
+</div>
+
+<!-- end columns -->
