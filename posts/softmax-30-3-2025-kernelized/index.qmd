@@ -2,7 +2,7 @@
 title: "SoftMax Kernel: Forward and Backward Pass (MATH)"
 date: "2025-03-30"
 author: "Shivam Pandey"
-categories: [Softmax, Autograd, MATH, Triton, CUDA]
+categories: [AI, Compute, Autograd, MATH]
 draft: false
 ---
 

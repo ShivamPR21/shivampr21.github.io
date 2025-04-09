@@ -25,9 +25,16 @@ website:
         href: https://github.com/shivampr21
       - icon: linkedin
         href: https://linkedin.com/in/shivampr21
+      - text: CV
+        href: /Shivam_Pandey_ShivamPR21__JSR.pdf
 
 format:
   html:
-    theme: journal
+    theme: united
     css: styles.css
     toc: true
+    highlight-style: github
+    html-math-method: mathjax
+    # code-fold: true
+    # code-summary: "Show code"
+    # code-tools: true

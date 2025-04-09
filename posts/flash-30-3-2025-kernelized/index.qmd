@@ -2,7 +2,7 @@
 title: "FlashAttention Kernel: Forward Pass (MATH)"
 date: "2025-03-30"
 author: "Shivam Pandey"
-categories: [FlashAttention, Transformers, Attention, Autograd, MATH]
+categories: [FlashAttention, Transformers, Attention, Compute, Autograd, MATH]
 draft: false
 ---
 

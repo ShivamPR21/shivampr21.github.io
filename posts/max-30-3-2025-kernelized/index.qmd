@@ -2,7 +2,7 @@
 title: "Max Kernel: Forward and Backward Pass (MATH)"
 date: "2025-03-30"
 author: "Shivam Pandey"
-categories: [Max, Autograd, MATH, Triton, CUDA]
+categories: [AI, Compute, Autograd, MATH]
 draft: false
 ---
 
