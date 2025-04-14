@@ -221,7 +221,7 @@ window.Quarto = {
    
   <ul>
   <li><a href="#flash-attention-forward-pass" id="toc-flash-attention-forward-pass" class="nav-link active" data-scroll-target="#flash-attention-forward-pass">Flash Attention Forward Pass:</a></li>
-  <li><a href="#parallelization-analysis-forward-pass" id="toc-parallelization-analysis-forward-pass" class="nav-link" data-scroll-target="#parallelization-analysis-forward-pass">Parallelization Analysis: Forward Pass</a></li>
+  <li><a href="#FWD-PLL" id="toc-FWD-PLL" class="nav-link" data-scroll-target="#FWD-PLL">Parallelization Analysis: Forward Pass</a></li>
   <li><a href="#data-dependency-graph-ddg" id="toc-data-dependency-graph-ddg" class="nav-link" data-scroll-target="#data-dependency-graph-ddg">Data Dependency Graph (DDG)</a>
   <ul class="collapse">
   <li><a href="#deductions-from-ddg" id="toc-deductions-from-ddg" class="nav-link" data-scroll-target="#deductions-from-ddg">Deductions from DDG:</a></li>
@@ -293,8 +293,8 @@ O^{[m, d]}_{0} = \frac{\exp(S^{[m, n=0]} - m_{0}) \cdot V^{[n=0, d]}}{l_{0}} \\
 O^{[m, d]}_{j+1} = \frac{O^{[m, d]}_{j} * l_j}{l_{j+1}} + \frac{\exp(S^{[m, n=j+1]} - m_{j+1}) \cdot V^{[n=j+1, d]}}{l_{j+1}} \\
 \end{align}\]</span></p>
 </section>
-<section id="parallelization-analysis-forward-pass" class="level2">
-<h2 class="anchored" data-anchor-id="parallelization-analysis-forward-pass">Parallelization Analysis: Forward Pass</h2>
+<section id="FWD-PLL" class="level2">
+<h2 class="anchored" data-anchor-id="FWD-PLL">Parallelization Analysis: Forward Pass</h2>
 <p>Using above mentioned math expressions for Flash Attention forward pass we can derive the following code (partly pseudo):</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">0</span>, M):</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> j <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">0</span>, N):</span>
@@ -569,7 +569,7 @@ O^{[m, d]}_{j+1} = \frac{O^{[m, d]}_{j} * l_j}{l_{j+1}} + \frac{\exp(S^{[m, n=j+
 <span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>addreductionthroughCTA(o[i], exp(S_ij <span class="op">-</span> m[i]) <span class="op">*</span> v_j <span class="op">/</span> l[i])</span>
 <span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>grid.sync()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>Wondering where is the code analysis for backward pass: Look at here:</p>
+<p>Wondering where is the code analysis for backward pass, that’s coming next <a href="../../posts/flash-bwd-pll-14-4-2025-kernelized/index.html">click here</a>.</p>
 
 
 </section>
