@@ -1,5 +1,6 @@
 ---
 title: "Shivam Pandey"
+from: markdown+emoji
 listing:
   contents: posts
   sort: "date desc"

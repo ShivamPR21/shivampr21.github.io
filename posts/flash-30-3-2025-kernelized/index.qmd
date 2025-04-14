@@ -83,7 +83,7 @@ l_{j+1} = l_j + exp(S^{[m, n=j+1]})
 
 **max** operation is used for numerical stability of the **softmax** especially keeping **exp** from exploding.
 
-Here next we will try to encorporate this stabilization technique in the above derived framework.
+Here next we will try to incorporated this stabilization technique in the above derived framework.
 
 \begin{align}
 m_0 = S^{[m, n=0]} \\
