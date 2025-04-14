@@ -291,7 +291,7 @@ l_{j+1} = l_j + exp(S^{[m, n=j+1]})
 <section id="wtf-exp-can-explode-coz-of-high-multiplication-values" class="level4">
 <h4 class="anchored" data-anchor-id="wtf-exp-can-explode-coz-of-high-multiplication-values">WTF: <span class="math inline">\(\exp\)</span> can explode coz of high multiplication values</h4>
 <p><strong>max</strong> operation is used for numerical stability of the <strong>softmax</strong> especially keeping <strong>exp</strong> from exploding.</p>
-<p>Here next we will try to encorporate this stabilization technique in the above derived framework.</p>
+<p>Here next we will try to incorporated this stabilization technique in the above derived framework.</p>
 <p><span class="math display">\[\begin{align}
 m_0 = S^{[m, n=0]} \\
 m_{j+1} = \max(m_j, S^{[m, n=j+1]}) \\

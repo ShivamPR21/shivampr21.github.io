@@ -10,7 +10,885 @@
 <atom:link href="https://shivampr21.github.io/index.xml" rel="self" type="application/rss+xml"/>
 <description></description>
 <generator>quarto-1.6.36</generator>
-<lastBuildDate>Sat, 29 Mar 2025 18:30:00 GMT</lastBuildDate>
+<lastBuildDate>Sun, 13 Apr 2025 18:30:00 GMT</lastBuildDate>
+<item>
+  <title>FlashAttention Kernel: Forward Pass (Parallelism)</title>
+  <dc:creator>Shivam Pandey</dc:creator>
+  <link>https://shivampr21.github.io/posts/flash-fwd-pll-14-4-2025-kernelized/</link>
+  <description><![CDATA[ 
+
+
+
+
+<p>Continuing on my previous blog: <a href="../../posts/flash-30-3-2025-kernelized/index.html"><strong>FlashAttention Kernel: Forward Pass (MATH)</strong></a>, here we will explore the possibility of parallelism in the Forward Pass Kernel with step by step code transform, and finally reaching a stage which is much closer to the <a href="https://docs.nvidia.com/cuda/cuda-c-programming-guide/">CUDA programming model</a>.</p>
+<section id="flash-attention-forward-pass" class="level2">
+<h2 class="anchored" data-anchor-id="flash-attention-forward-pass">Flash Attention Forward Pass:</h2>
+<p>In my last blog we saw how math works in <strong>Flash Attention</strong>, and this was the final expression that we derived there:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%5Cbegin%7Balign%7D%0Am_0%20=%20S%5E%7B%5Bm,%20n=0%5D%7D%20%5C%5C%0Am_%7Bj+1%7D%20=%20%5Cmax(m_j,%20S%5E%7B%5Bm,%20n=j+1%5D%7D)%20%5C%5C%0Al_0%20=%20%5Cexp(S%5E%7B%5Bm,%20n=0%5D%7D%20-%20m_0)%20%5C%5C%0Al_%7Bj+1%7D%20=%20%5Csum_%7Bn%5Cin%5B0%20%5Cdots%20j,%20j+1%5D%7D%5Cexp(S%5E%7B%5Bm,%20n%5D%7D%20-%20m_%7Bj+1%7D)%20%5C%5C%0Al_%7Bj+1%7D%20=%20%5Cfrac%7Bexp(-m_%7Bj%7D)%7D%7B%5Cexp(m_%7Bj+1%7D%20-%20m_%7Bj%7D)%7D%5Csum_%7Bn%5Cin%5B0%20%5Cdots%20j%5D%7D%5Cexp(S%5E%7B%5Bm,%20n%5D%7D)%20+%20%5Cexp(S%5E%7B%5Bm,%20n=j+1%5D%7D%20-%20m_%7Bj+1%7D)%20%5C%5C%0Al_%7Bj+1%7D%20=%20l_%7Bj%7D%5Cexp(m_%7Bj%7D%20-%20m_%7Bj+1%7D)%20+%20%5Cexp(S%5E%7B%5Bm,%20n=j+1%5D%7D%20-%20m_%7Bj+1%7D)%20%5C%5C%0AO%5E%7B%5Bm,%20d%5D%7D_%7B0%7D%20=%20%5Cfrac%7B%5Cexp(S%5E%7B%5Bm,%20n=0%5D%7D%20-%20m_%7B0%7D)%20%5Ccdot%20V%5E%7B%5Bn=0,%20d%5D%7D%7D%7Bl_%7B0%7D%7D%20%5C%5C%0AO%5E%7B%5Bm,%20d%5D%7D_%7Bj+1%7D%20=%20%5Cfrac%7BO%5E%7B%5Bm,%20d%5D%7D_%7Bj%7D%20*%20l_j%7D%7Bl_%7Bj+1%7D%7D%20+%20%5Cfrac%7B%5Cexp(S%5E%7B%5Bm,%20n=j+1%5D%7D%20-%20m_%7Bj+1%7D)%20%5Ccdot%20V%5E%7B%5Bn=j+1,%20d%5D%7D%7D%7Bl_%7Bj+1%7D%7D%20%5C%5C%0A%5Cend%7Balign%7D"></p>
+</section>
+<section id="parallelization-analysis-forward-pass" class="level2">
+<h2 class="anchored" data-anchor-id="parallelization-analysis-forward-pass">Parallelization Analysis: Forward Pass</h2>
+<p>Using above mentioned math expressions for Flash Attention forward pass we can derive the following code (partly pseudo):</p>
+<div class="sourceCode" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">for</span> i <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">in</span> <span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">range</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>, M):</span>
+<span id="cb1-2">    <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">for</span> j <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">in</span> <span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">range</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>, N):</span>
+<span id="cb1-3">        <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">for</span> d <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">in</span> <span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">range</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>, D):</span>
+<span id="cb1-4">            q_i <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> Q[i] <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># S1: No self dependency: [SLoop: i, TLoop: i]</span></span>
+<span id="cb1-5">            k_j <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> K[j] <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># S2: No self dependency: [SLoop: j, TLoop: j]</span></span>
+<span id="cb1-6"></span>
+<span id="cb1-7">            m_i <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> m[i] <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># S3: No self dependency: [SLoop: i, TLoop: i]</span></span>
+<span id="cb1-8">            l_i <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> l[i] <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># S4: No self dependency: [SLoop: i, TLoop: i]</span></span>
+<span id="cb1-9"></span>
+<span id="cb1-10">            S_ij <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> q_i <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">@</span> k_j <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># S5: No self dependency: [SLoop: (i, j), TLoop: (i, j)] # Loop interchange possible # RAW on q_i, and k_j</span></span>
+<span id="cb1-11"></span>
+<span id="cb1-12">            m_ij <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> <span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">max</span>(m_i, S_ij) <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># S6: No self dependency: [SLoop: (i, (i, j)), TLoop: (i, j)] # RAW on m_i and S_ij</span></span>
+<span id="cb1-13">            l_ij <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> l_i <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> exp(m_i <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> m_ij) <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> exp(S_ij <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> m_ij) <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># S7: No self dependency: [SLoop: (j, (i, (i, j)), ((i, j), (i, j))), TLoop: (i, j)] # RAW on l_i, m_i, m_ij, S_ij, m_ij</span></span>
+<span id="cb1-14"></span>
+<span id="cb1-15">            o_id <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> O[i, d] <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># S8: No self dependency: [SLoop: (i, d), TLoop: (i, d)]</span></span>
+<span id="cb1-16">            v_jd <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> V[j, d] <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># S9: No self dependency: [SLoop: (j, d), TLoop: (j, d)]</span></span>
+<span id="cb1-17"></span>
+<span id="cb1-18">            o_ijd <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> o_id <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> l_i <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span> l_ij <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> exp(S_ij <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> m_ij) <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> v_jd <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span> l_ij <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># S10: No self dependency: [SLoop: ((i, d), i, (i, j), (i, j), (i, j), (j, d), (i, j)), TLoop: (i, j, d)] # RAW on o_id, l_i, l_ij, S_ij, m_ij, v_jd, l_ij</span></span>
+<span id="cb1-19"></span>
+<span id="cb1-20">            <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">### Finally assign the results back to buffers</span></span>
+<span id="cb1-21">            O[i, d] <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> o_ijd <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># S11: Aggregation over j # RAW on o_ijd</span></span>
+<span id="cb1-22">            m[i] <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> m_ij <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># S12: Aggregation over j # RAW on m_ij</span></span>
+<span id="cb1-23">            l[i] <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> l_ij <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># S13: Aggregation over j # RAW on l_ij</span></span></code></pre></div>
+<p>The code is annotated with comments that follows a simple information template:</p>
+<ol type="1">
+<li>The starting of the comments starts with letter <code>S</code> followed by a number, e.g.&nbsp;<code>S2</code>, this indicates an statement along with its given number, so <code>S2</code> stands for <code>statement 2</code>.</li>
+<li>After statement number the comment lists of the statement if dependent on self, i.e.&nbsp;if the variable updated in the statement is further being updated in a future iteration.</li>
+<li>The comment then follows a simple notation for loop iteration order, which consists of two parts <code>Source Loop (SLoop)</code> and <code>Target Loop (TLoop)</code>. In case where a statement consists of multiple variables this entry will become a list of list, where each entry corresponds to following variable used in order. For a variable being used in the statement, the iteration state is denoted by either the loop variable i.e.&nbsp;<code>i</code>, <code>j</code>, or <code>d</code> in this particular case or if the variable is dependent upon multiple iteration loops then it will be a tuple of those variables e.g.&nbsp;<code>(i, d)</code>.</li>
+<li>Following this the comment lists the type of dependency (either of <code>WAW</code>, <code>RAW</code>, and <code>WAR</code>) and corresponding elements to which that dependency applies.</li>
+<li>Sometimes a comment can say something like <code>Aggregation over j</code> which means that the reduction is being performed over that particular loop variable. Though this is generally an inplace operation, for better segregation of dependencies update, and reuse of a variable this can be done by computing a source iteration dependent local variable e.g.&nbsp;<code>o_ijd</code> and then updating it to a variable that is independent of the target loop e.g.&nbsp;<code>O[i, d] = o_ijd</code>.</li>
+</ol>
+</section>
+<section id="data-dependency-graph-ddg" class="level2">
+<h2 class="anchored" data-anchor-id="data-dependency-graph-ddg">Data Dependency Graph (DDG)</h2>
+<p>This graph is derived from the previously annotated code, and represent the data flow and dependency across different statements.</p>
+<p>Here we have mentioned <code>SCC</code> several times, which stands for <code>Strongly Connected Component</code>, it occurs in a graph if all the nodes of a sub-graph are accessible from every other node within that subgraph. In such case parallelization is not possible.</p>
+<blockquote class="blockquote">
+<p>Note: <code>SCCs</code> generally appears with <code>Loop Carried Dependency</code> which is denoted as <code>LC-i/j</code> in the code representing over which loop it appears. E.g. if it’s an <code>LC-i</code> the <code>SCC</code> could not be parallelized over loop <code>i</code>.</p>
+</blockquote>
+<div class="cell" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class="figure"><p></p>
+<div>
+<pre class="mermaid mermaid-js">graph TD
+    S1["S1: Q[i]"]
+    S2["S2: K[j]"]
+    S3["S3: m[i]"]
+    S4["S4: l[i]"]
+    S5["S5: S_ij = f(q_i, k_j)"]
+    S6["S6: m_ij = f(m_i, S_ij)"]
+    S7["S7: l_ij = f(l_i, m_i, m_ij, S_ij, m_ij)"]
+    S8["S8: O[i, d]"]
+    S9["S9: V[j, d]"]
+    S10["S10: o_ijd = f(o_id, l_i, l_ij, S_ij, m_ij, v_jd, l_ij)"]
+    S11["S11: O[i, d] = o_ijd"]
+    S12["S12: m[i] = m_ij"]
+    S13["S13: l[i] = l_ij"]
+
+    %% Intra-iteration dependencies
+    S1 --&gt; S5
+    S2 --&gt; S5
+    S5 --&gt; S6
+    S3 --&gt; S7
+    S5 --&gt; S7
+    S6 --&gt; S7
+    S4 --&gt; S10
+    S5 --&gt; S10
+    S6 --&gt; S10
+    S7 --&gt; S10
+    S9 --&gt; S10
+
+    %%  Force same level for {S11, S12, S13}
+    %% S11 ~~~ S12
+    %% S12 ~~~ S13
+
+    %% Strongly Connected Components (SCCs)
+    subgraph SCC1
+        S3 --&gt; S6
+        S6 --&gt; S12
+        S12 -.-&gt;|LC-j| S3
+    end
+
+    subgraph SCC2
+        S4 --&gt; S7
+        S7 --&gt; S13
+        S13 -.-&gt;|LC-j| S4
+    end
+
+    subgraph SCC3
+        S8 --&gt; S10
+        S10 --&gt; S11
+        S11 -.-&gt;|LC-j| S8
+    end
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+<section id="deductions-from-ddg" class="level3">
+<h3 class="anchored" data-anchor-id="deductions-from-ddg">Deductions from DDG:</h3>
+<ol type="1">
+<li>There is no loop carries dependencies for <code>i</code> and <code>d</code> loop, so both are parallelizable.</li>
+<li>If we analyze the loop order change all of the loop order <code>i&lt;-&gt;j&lt;-&gt;d</code> are valid, because the ony loop carried dependency is in <code>j</code> loop, and that has a positive lex i.e.&nbsp;source loop is <code>j-1</code> and target loop is <code>j</code>.</li>
+<li>For parallelization over <code>j</code> loop we need to localize dependent variables and utilize <code>atomics</code> to communicate across thread.</li>
+</ol>
+</section>
+<section id="LIA" class="level3">
+<h3 class="anchored" data-anchor-id="LIA">Loop Interchange Analysis</h3>
+<p><strong>Question:</strong> If we could interchange the loop <img src="https://latex.codecogs.com/png.latex?i%20%5Cleftrightarrow%20j"> to improve the locality of <code>k_j</code> and <code>v_j</code> as there are only <code>3 reads</code> (<code>q_i</code>, <code>K_j</code>, &amp; <code>v_j</code>) from <code>HBM</code> (excluding outputs and <code>m_i &amp; l_i</code>).</p>
+<p>The inner <code>loop-j</code> is responsible for loading both <code>k_j</code> and <code>v_j</code> from <code>HBM</code> and if the loops are interchanged a single load of <code>k_j</code> and <code>v_j</code> can be used for all of <code>q_i</code>, which when other way around is : a single load of <code>q_i</code> is being used for all <code>k_j</code> and <code>v_j</code> sequential loads.</p>
+<p>For loop interchange one important factor is that <strong>“loop iteration dependence vector should not become lexicographically negative”</strong></p>
+<p><strong>Example:</strong></p>
+<div class="sourceCode" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">for</span> (i<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">;</span> i<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&lt;</span>N<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">;</span> i<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">++</span>) {</span>
+<span id="cb2-2">  <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">for</span> (j<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">;</span> j<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&lt;</span>N<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">;</span> j<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">++</span>) {</span>
+<span id="cb2-3">    A[i][j] <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> A[i<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>][j<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>]<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">;</span> <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">//</span> RAW dependencies on i <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">and</span> j</span>
+<span id="cb2-4">  }</span>
+<span id="cb2-5">}</span></code></pre></div>
+<p>In this loop the the direction vector of iteration for the one dependency i.e.&nbsp;<code>A[i-1][j+1]</code> is <code>(1, -1)</code>. Which after switching the loops:</p>
+<div class="sourceCode" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">for</span> (j<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">;</span> j<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&lt;</span>N<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">;</span> j<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">++</span>) {</span>
+<span id="cb3-2">  <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">for</span> (i<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">;</span> i<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&lt;</span>N<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">;</span> i<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">++</span>) {</span>
+<span id="cb3-3">    A[i][j] <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> ...</span>
+<span id="cb3-4">  }</span>
+<span id="cb3-5">}</span></code></pre></div>
+<p>becomes <code>(-1, 1)</code> which is called lexicographically negative, and thus doesn’t allows the loop interchange as the loop order would change if the interchange happens.</p>
+<p>Simply stating: in the original loop <code>A[i-1][j+1]</code> comes before <code>A[i][j]</code> and is updated before it. But after reorder <code>A[i][j]</code> will come before and modified than <code>A[i-1][j+1]</code> thus we can’t interchange the loops.</p>
+</section>
+<section id="modified-code-1-improved-locality" class="level3">
+<h3 class="anchored" data-anchor-id="modified-code-1-improved-locality">Modified Code: #1 Improved locality</h3>
+<p>As noted previously taking out some statements out of independent loop iterations increases variable locality, thus can be reused readily, reducing pressure on memory.</p>
+<div class="sourceCode" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">for</span> i <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">in</span> <span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">range</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>, M):</span>
+<span id="cb4-2">    q_i <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> Q[i] <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># S1: No self dependency: [SLoop: i, TLoop: i]</span></span>
+<span id="cb4-3">    m_i <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> m[i] <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># S3: No self dependency: [SLoop: i, TLoop: i]</span></span>
+<span id="cb4-4">    l_i <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> l[i] <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># S4: No self dependency: [SLoop: i, TLoop: i]</span></span>
+<span id="cb4-5">    <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">for</span> j <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">in</span> <span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">range</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>, N):</span>
+<span id="cb4-6">        k_j <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> K[j] <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># S2: No self dependency: [SLoop: j, TLoop: j]</span></span>
+<span id="cb4-7"></span>
+<span id="cb4-8">        S_ij <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> q_i <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">@</span> k_j <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># S5: No self dependency: [SLoop: (i, j), TLoop: (i, j)] # Loop interchange possible # RAW on q_i, and k_j</span></span>
+<span id="cb4-9"></span>
+<span id="cb4-10">        m_ij <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> <span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">max</span>(m_i, S_ij) <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># S6: No self dependency: [SLoop: (i, (i, j)), TLoop: (i, j)] # RAW on m_i and S_ij</span></span>
+<span id="cb4-11"></span>
+<span id="cb4-12">        l_ij <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> l_i <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> exp(m_i <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> m_ij) <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> exp(S_{ij} <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> m_ij) <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># S7: No self dependency: [SLoop: (j, (i, (i, j)), ((i, j), (i, j))), TLoop: (i, j)] # RAW on l_i, m_i, m_ij, S_ij, m_ij</span></span>
+<span id="cb4-13"></span>
+<span id="cb4-14">        <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">for</span> d <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">in</span> <span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">range</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>, D):</span>
+<span id="cb4-15">            o_id <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> O[i, d] <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># S8: No self dependency: [SLoop: (i, d), TLoop: (i, d)]</span></span>
+<span id="cb4-16">            v_jd <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> V[j, d] <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># S9: No self dependency: [SLoop: (j, d), TLoop: (j, d)]</span></span>
+<span id="cb4-17"></span>
+<span id="cb4-18">            o_ijd <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> o_id <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> l_i <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span> l_ij <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> exp(S_ij <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> m_ij) <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> v_jd <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span> l_ij <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># S10: No self dependency: [SLoop: ((i, d), i, (i, j), (i, j), (i, j), (j, d), (i, j)), TLoop: (i, j, d)] # RAW on o_id, l_i, l_ij, S_ij, m_ij, v_jd, l_ij</span></span>
+<span id="cb4-19"></span>
+<span id="cb4-20">            <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">### Finally assign the results back to buffers</span></span>
+<span id="cb4-21">            O[i, d] <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> o_ijd <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># S11: Aggregation over j # RAW on o_ijd</span></span>
+<span id="cb4-22"></span>
+<span id="cb4-23">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Independent of `d` loop</span></span>
+<span id="cb4-24">    m[i] <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> m_ij <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># S12: Aggregation over j # RAW on m_ij</span></span>
+<span id="cb4-25">    l[i] <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> l_ij <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># S13: Aggregation over j # RAW on l_ij</span></span></code></pre></div>
+</section>
+<section id="modified-code-2-i-d-loops-full-parallelization" class="level3">
+<h3 class="anchored" data-anchor-id="modified-code-2-i-d-loops-full-parallelization">Modified Code: #2 <code>i</code> &amp; <code>d</code> loops full parallelization</h3>
+<p>Since there are no self-dependencies in loop iterations <code>i</code> and <code>d</code>, these two loops can be fully parallelized.</p>
+<div class="sourceCode" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Loop Collapsed under parallelization</span></span>
+<span id="cb5-2"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># for i in range(0, M):</span></span>
+<span id="cb5-3">q_i <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> Q[i, :] <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># S1: No self dependency: [SLoop: i, TLoop: i]</span></span>
+<span id="cb5-4">m_i <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> m[i] <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># S3: No self dependency: [SLoop: i, TLoop: i]</span></span>
+<span id="cb5-5">l_i <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> l[i] <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># S4: No self dependency: [SLoop: i, TLoop: i]</span></span>
+<span id="cb5-6">o_i <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> O[i, :] <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># S8: No self dependency: [SLoop: (i, d), TLoop: (i, d)]</span></span>
+<span id="cb5-7"><span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">for</span> j <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">in</span> <span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">range</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>, N):</span>
+<span id="cb5-8">    k_j <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> K[j, :] <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># S2: No self dependency: [SLoop: j, TLoop: j]</span></span>
+<span id="cb5-9">    v_j <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> V[j, :] <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># S9: No self dependency: [SLoop: (j, d), TLoop: (j, d)]</span></span>
+<span id="cb5-10"></span>
+<span id="cb5-11">    S_ij <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> q_i <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">@</span> k_j <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># S5: No self dependency: [SLoop: (i, j), TLoop: (i, j)] # Loop interchange possible # RAW on q_i, and k_j</span></span>
+<span id="cb5-12"></span>
+<span id="cb5-13">    m_ij <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> <span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">max</span>(m_i, S_ij) <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># S6: No self dependency: [SLoop: (i, (i, j)), TLoop: (i, j)] # RAW on m_i and S_ij</span></span>
+<span id="cb5-14"></span>
+<span id="cb5-15">    l_ij <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> l_i <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> exp(m_i <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> m_ij) <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> exp(S_{ij} <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> m_ij) <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># S7: No self dependency: [SLoop: (j, (i, (i, j)), ((i, j), (i, j))), TLoop: (i, j)] # RAW on l_i, m_i, m_ij, S_ij, m_ij</span></span>
+<span id="cb5-16"></span>
+<span id="cb5-17">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Loop Collapsed under parallelization</span></span>
+<span id="cb5-18">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># for d in range(0, D):</span></span>
+<span id="cb5-19">    o_ij <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> o_i <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> l_i <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span> l_ij <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> exp(S_ij <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> m_ij) <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> v_j <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span> l_ij <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># S10: No self dependency: [SLoop: ((i, d), i, (i, j), (i, j), (i, j), (j, d), (i, j)), TLoop: (i, j, d)] # RAW on o_id, l_i, l_ij, S_ij, m_ij, v_jd, l_ij</span></span>
+<span id="cb5-20"></span>
+<span id="cb5-21">    o_i <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> o_ij</span>
+<span id="cb5-22">    m_i <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> m_ij</span>
+<span id="cb5-23">    l_i <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> l_ij</span>
+<span id="cb5-24"></span>
+<span id="cb5-25"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Independent of `d` loop</span></span>
+<span id="cb5-26">O[i] <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> o_i <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># S11: Aggregation over j # RAW on o_i</span></span>
+<span id="cb5-27">m[i] <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> m_i <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># S12: Aggregation over j # RAW on m_i</span></span>
+<span id="cb5-28">l[i] <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> l_i <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># S13: Aggregation over j # RAW on l_i</span></span></code></pre></div>
+</section>
+<section id="modified-code-3-attempt-to-parallelize-loop-j" class="level3">
+<h3 class="anchored" data-anchor-id="modified-code-3-attempt-to-parallelize-loop-j">Modified Code: #3 attempt to parallelize loop <code>j</code></h3>
+<p>Though there are multiple <code>SCCs</code> with <code>LC-j</code>, still we can incorporate those in the CUDA programming model by launching all of the corresponding threads in one shot, while enforcing an order in which threads execute.</p>
+<p>This is generally done with <a href="https://docs.nvidia.com/cuda/cuda-c-programming-guide/#atomicadd"><code>atomics</code> in CUDA</a></p>
+<div class="sourceCode" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># assume global variable `counter = 0` which is incremented as per atomics.</span></span>
+<span id="cb6-2"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Loop Collapsed under parallelization</span></span>
+<span id="cb6-3"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># for i in range(0, M):</span></span>
+<span id="cb6-4">q_i <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> Q[i, :] <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># S1: No self dependency: [SLoop: i, TLoop: i]</span></span>
+<span id="cb6-5"></span>
+<span id="cb6-6"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Loop collapsed under parallelization</span></span>
+<span id="cb6-7"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># for j in range(0, N):</span></span>
+<span id="cb6-8">k_j <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> K[j, :] <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># S2: No self dependency: [SLoop: j, TLoop: j]</span></span>
+<span id="cb6-9">v_j <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> V[j, :] <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># S9: No self dependency: [SLoop: (j, d), TLoop: (j, d)]</span></span>
+<span id="cb6-10"></span>
+<span id="cb6-11">S_ij <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> q_i <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">@</span> k_j <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># S5: No self dependency: [SLoop: (i, j), TLoop: (i, j)] # Loop interchange possible # RAW on q_i, and k_j</span></span>
+<span id="cb6-12"></span>
+<span id="cb6-13"><span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">while</span> <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">True</span>:</span>
+<span id="cb6-14">    <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">if</span> tid <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> counter:</span>
+<span id="cb6-15">        m_i <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> m[i]</span>
+<span id="cb6-16">        m_ij <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> <span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">max</span>(m_i, S_ij) <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># S6: No self dependency: [SLoop: (i, (i, j)), TLoop: (i, j)] # RAW on m_i and S_ij</span></span>
+<span id="cb6-17">        m[i] <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> m_ij</span>
+<span id="cb6-18">        l_i <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> l[i]</span>
+<span id="cb6-19">        l_ij <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> l_i <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> exp(m_i <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> m_ij) <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> exp(S_ij <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> m_ij)</span>
+<span id="cb6-20">        l[i] <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> l_ij</span>
+<span id="cb6-21">        o_i <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> O[i, :]</span>
+<span id="cb6-22">        o_ij <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> o_i <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> l_i <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span> l_ij <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> exp(S_ij <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> m_ij) <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> v_j <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span> l_ij</span>
+<span id="cb6-23">        O[i, :] <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> o_ij</span>
+<span id="cb6-24">        atomicadd(counter, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>)<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">;</span></span>
+<span id="cb6-25">        <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">break</span></span></code></pre></div>
+</section>
+<section id="modified-code-3-attempt-to-parallelize-loop-j-this-time-without-enforcing-an-order" class="level3">
+<h3 class="anchored" data-anchor-id="modified-code-3-attempt-to-parallelize-loop-j-this-time-without-enforcing-an-order">Modified Code: #3 attempt to parallelize loop <code>j</code> this time without enforcing an order</h3>
+<div class="sourceCode" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># assume global variable `counter = 0` which is incremented as per atomics.</span></span>
+<span id="cb7-2"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Loop Collapsed under parallelization</span></span>
+<span id="cb7-3"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># for i in range(0, M):</span></span>
+<span id="cb7-4">q_i <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> Q[i, :] <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># S1: No self dependency: [SLoop: i, TLoop: i]</span></span>
+<span id="cb7-5"></span>
+<span id="cb7-6"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Loop collapsed under parallelization</span></span>
+<span id="cb7-7"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># for j in range(0, N):</span></span>
+<span id="cb7-8">k_j <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> K[j, :] <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># S2: No self dependency: [SLoop: j, TLoop: j]</span></span>
+<span id="cb7-9">v_j <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> V[j, :] <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># S9: No self dependency: [SLoop: (j, d), TLoop: (j, d)]</span></span>
+<span id="cb7-10"></span>
+<span id="cb7-11">S_ij <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> q_i <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">@</span> k_j <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># S5: No self dependency: [SLoop: (i, j), TLoop: (i, j)] # Loop interchange possible # RAW on q_i, and k_j</span></span>
+<span id="cb7-12"></span>
+<span id="cb7-13"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Compute complete max till end</span></span>
+<span id="cb7-14">atomic<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span><span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">max</span>(m[i], S_ij)</span>
+<span id="cb7-15"></span>
+<span id="cb7-16">grid.sync()</span>
+<span id="cb7-17"></span>
+<span id="cb7-18">atomic<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span>add(l[i], exp(S_ij <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> m[i]))</span>
+<span id="cb7-19"></span>
+<span id="cb7-20">grid.sync()</span>
+<span id="cb7-21"></span>
+<span id="cb7-22">atomic<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span>add(o[i], exp(S_ij <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> m[i]) <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> v_j <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span> l[i])</span>
+<span id="cb7-23"></span>
+<span id="cb7-24">grid.sync()</span></code></pre></div>
+</section>
+<section id="modified-code-4-attempt-to-parallelize-loop-j-this-time-without-enforcing-an-order" class="level3">
+<h3 class="anchored" data-anchor-id="modified-code-4-attempt-to-parallelize-loop-j-this-time-without-enforcing-an-order">Modified Code: #4 attempt to parallelize loop <code>j</code> this time without enforcing an order</h3>
+<p>Another way to achieve this is <code>Cooperative Thread Arrays (CTA)</code> available in CUDA, <strong>more on this in next blog when we dive deep into CUDA code itself.</strong></p>
+<div class="sourceCode" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># assume global variable `counter = 0` which is incremented as per atomics.</span></span>
+<span id="cb8-2"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Loop Collapsed under parallelization</span></span>
+<span id="cb8-3"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># for i in range(0, M):</span></span>
+<span id="cb8-4">q_i <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> Q[i, :] <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># S1: No self dependency: [SLoop: i, TLoop: i]</span></span>
+<span id="cb8-5"></span>
+<span id="cb8-6"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Loop collapsed under parallelization</span></span>
+<span id="cb8-7"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># for j in range(0, N):</span></span>
+<span id="cb8-8">k_j <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> K[j, :] <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># S2: No self dependency: [SLoop: j, TLoop: j]</span></span>
+<span id="cb8-9">v_j <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> V[j, :] <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># S9: No self dependency: [SLoop: (j, d), TLoop: (j, d)]</span></span>
+<span id="cb8-10"></span>
+<span id="cb8-11">S_ij <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> q_i <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">@</span> k_j <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># S5: No self dependency: [SLoop: (i, j), TLoop: (i, j)] # Loop interchange possible # RAW on q_i, and k_j</span></span>
+<span id="cb8-12"></span>
+<span id="cb8-13"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Compute complete max till end</span></span>
+<span id="cb8-14">maxreductionthroughCTA(m[i], S_ij)</span>
+<span id="cb8-15"></span>
+<span id="cb8-16">grid.sync()</span>
+<span id="cb8-17"></span>
+<span id="cb8-18">addreductionthroughCTA(l[i], exp(S_ij <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> m[i]))</span>
+<span id="cb8-19"></span>
+<span id="cb8-20">grid.sync()</span>
+<span id="cb8-21"></span>
+<span id="cb8-22">addreductionthroughCTA(o[i], exp(S_ij <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> m[i]) <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> v_j <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span> l[i])</span>
+<span id="cb8-23"></span>
+<span id="cb8-24">grid.sync()</span></code></pre></div>
+<p>Wondering where is the code analysis for backward pass: Look at here:</p>
+
+
+</section>
+</section>
+
+<a onclick="window.scrollTo(0, 0); return false;" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a> ]]></description>
+  <category>FlashAttention</category>
+  <category>Transformers</category>
+  <category>Attention</category>
+  <category>Compute</category>
+  <category>Autograd</category>
+  <category>Parallelism</category>
+  <category>CUDA</category>
+  <guid>https://shivampr21.github.io/posts/flash-fwd-pll-14-4-2025-kernelized/</guid>
+  <pubDate>Sun, 13 Apr 2025 18:30:00 GMT</pubDate>
+</item>
 <item>
   <title>Max Kernel: Forward and Backward Pass (MATH)</title>
   <dc:creator>Shivam Pandey</dc:creator>
@@ -207,7 +1085,7 @@
 <section id="wtf-exp-can-explode-coz-of-high-multiplication-values" class="level4">
 <h4 class="anchored" data-anchor-id="wtf-exp-can-explode-coz-of-high-multiplication-values">WTF: <img src="https://latex.codecogs.com/png.latex?%5Cexp"> can explode coz of high multiplication values</h4>
 <p><strong>max</strong> operation is used for numerical stability of the <strong>softmax</strong> especially keeping <strong>exp</strong> from exploding.</p>
-<p>Here next we will try to encorporate this stabilization technique in the above derived framework.</p>
+<p>Here next we will try to incorporated this stabilization technique in the above derived framework.</p>
 <p><img src="https://latex.codecogs.com/png.latex?%5Cbegin%7Balign%7D%0Am_0%20=%20S%5E%7B%5Bm,%20n=0%5D%7D%20%5C%5C%0Am_%7Bj+1%7D%20=%20%5Cmax(m_j,%20S%5E%7B%5Bm,%20n=j+1%5D%7D)%20%5C%5C%0Al_0%20=%20%5Cexp(S%5E%7B%5Bm,%20n=0%5D%7D%20-%20m_0)%20%5C%5C%0Al_%7Bj+1%7D%20=%20%5Csum_%7Bn%5Cin%5B0%20%5Cdots%20j,%20j+1%5D%7D%5Cexp(S%5E%7B%5Bm,%20n%5D%7D%20-%20m_%7Bj+1%7D)%20%5C%5C%0Al_%7Bj+1%7D%20=%20%5Cfrac%7Bexp(-m_%7Bj%7D)%7D%7B%5Cexp(m_%7Bj+1%7D%20-%20m_%7Bj%7D)%7D%5Csum_%7Bn%5Cin%5B0%20%5Cdots%20j%5D%7D%5Cexp(S%5E%7B%5Bm,%20n%5D%7D)%20+%20%5Cexp(S%5E%7B%5Bm,%20n=j+1%5D%7D%20-%20m_%7Bj+1%7D)%20%5C%5C%0Al_%7Bj+1%7D%20=%20l_%7Bj%7D%5Cexp(m_%7Bj%7D%20-%20m_%7Bj+1%7D)%20+%20%5Cexp(S%5E%7B%5Bm,%20n=j+1%5D%7D%20-%20m_%7Bj+1%7D)%20%5C%5C%0AO%5E%7B%5Bm,%20d%5D%7D_%7B0%7D%20=%20%5Cfrac%7B%5Cexp(S%5E%7B%5Bm,%20n=0%5D%7D%20-%20m_%7B0%7D)%20%5Ccdot%20V%5E%7B%5Bn=0,%20d%5D%7D%7D%7Bl_%7B0%7D%7D%20%5C%5C%0AO%5E%7B%5Bm,%20d%5D%7D_%7Bj+1%7D%20=%20%5Cfrac%7BO%5E%7B%5Bm,%20d%5D%7D_%7Bj%7D%20*%20l_j%7D%7Bl_%7Bj+1%7D%7D%20+%20%5Cfrac%7B%5Cexp(S%5E%7B%5Bm,%20n=j+1%5D%7D%20-%20m_%7Bj+1%7D)%20%5Ccdot%20V%5E%7B%5Bn=j+1,%20d%5D%7D%7D%7Bl_%7Bj+1%7D%7D%20%5C%5C%0A%5Cend%7Balign%7D"></p>
 
 

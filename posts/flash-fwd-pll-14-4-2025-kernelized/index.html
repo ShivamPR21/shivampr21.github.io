@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.6.36">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Shivam Pandey">
+<meta name="dcterms.date" content="2025-04-14">
+
+<title>FlashAttention Kernel: Forward Pass (Parallelism) – ShivamPR21</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<link href="../..//logo.png" rel="icon" type="image/png">
+<script src="../../site_libs/quarto-html/quarto.js"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-722b7ecd703fa194e825a0d619ad685e.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-6c546f117f8b1973b5b116f31b54602b.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<meta name="mermaid-theme" content="dark">
+<script src="../../site_libs/quarto-diagram/mermaid.min.js"></script>
+<script src="../../site_libs/quarto-diagram/mermaid-init.js"></script>
+<link href="../../site_libs/quarto-diagram/mermaid.css" rel="stylesheet">
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+<meta property="og:title" content="FlashAttention Kernel: Forward Pass (Parallelism) – ShivamPR21">
+<meta property="og:description" content="">
+<meta property="og:site_name" content="ShivamPR21">
+<meta name="twitter:title" content="FlashAttention Kernel: Forward Pass (Parallelism) – ShivamPR21">
+<meta name="twitter:description" content="">
+<meta name="twitter:creator" content="@ShivamPR21">
+<meta name="twitter:site" content="@ShivamPR21">
+<meta name="twitter:card" content="summary">
+</head>
+
+<body class="nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">ShivamPR21</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../kernelized.html"> 
+<span class="menu-text">KERNELIZED</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://twitter.com/shivampr21"> <i class="bi bi-twitter" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/shivampr21"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://linkedin.com/in/shivampr21"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Shivam_Pandey_ShivamPR21__JSR.pdf"> 
+<span class="menu-text">CV</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-reader-toggle quarto-navigation-tool px-1" onclick="window.quartoToggleReader(); return false;" title="Toggle reader mode">
+  <div class="quarto-reader-toggle-btn">
+  <i class="bi"></i>
+  </div>
+</a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#flash-attention-forward-pass" id="toc-flash-attention-forward-pass" class="nav-link active" data-scroll-target="#flash-attention-forward-pass">Flash Attention Forward Pass:</a></li>
+  <li><a href="#parallelization-analysis-forward-pass" id="toc-parallelization-analysis-forward-pass" class="nav-link" data-scroll-target="#parallelization-analysis-forward-pass">Parallelization Analysis: Forward Pass</a></li>
+  <li><a href="#data-dependency-graph-ddg" id="toc-data-dependency-graph-ddg" class="nav-link" data-scroll-target="#data-dependency-graph-ddg">Data Dependency Graph (DDG)</a>
+  <ul class="collapse">
+  <li><a href="#deductions-from-ddg" id="toc-deductions-from-ddg" class="nav-link" data-scroll-target="#deductions-from-ddg">Deductions from DDG:</a></li>
+  <li><a href="#LIA" id="toc-LIA" class="nav-link" data-scroll-target="#LIA">Loop Interchange Analysis</a></li>
+  <li><a href="#modified-code-1-improved-locality" id="toc-modified-code-1-improved-locality" class="nav-link" data-scroll-target="#modified-code-1-improved-locality">Modified Code: #1 Improved locality</a></li>
+  <li><a href="#modified-code-2-i-d-loops-full-parallelization" id="toc-modified-code-2-i-d-loops-full-parallelization" class="nav-link" data-scroll-target="#modified-code-2-i-d-loops-full-parallelization">Modified Code: #2 <code>i</code> &amp; <code>d</code> loops full parallelization</a></li>
+  <li><a href="#modified-code-3-attempt-to-parallelize-loop-j" id="toc-modified-code-3-attempt-to-parallelize-loop-j" class="nav-link" data-scroll-target="#modified-code-3-attempt-to-parallelize-loop-j">Modified Code: #3 attempt to parallelize loop <code>j</code></a></li>
+  <li><a href="#modified-code-3-attempt-to-parallelize-loop-j-this-time-without-enforcing-an-order" id="toc-modified-code-3-attempt-to-parallelize-loop-j-this-time-without-enforcing-an-order" class="nav-link" data-scroll-target="#modified-code-3-attempt-to-parallelize-loop-j-this-time-without-enforcing-an-order">Modified Code: #3 attempt to parallelize loop <code>j</code> this time without enforcing an order</a></li>
+  <li><a href="#modified-code-4-attempt-to-parallelize-loop-j-this-time-without-enforcing-an-order" id="toc-modified-code-4-attempt-to-parallelize-loop-j-this-time-without-enforcing-an-order" class="nav-link" data-scroll-target="#modified-code-4-attempt-to-parallelize-loop-j-this-time-without-enforcing-an-order">Modified Code: #4 attempt to parallelize loop <code>j</code> this time without enforcing an order</a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">FlashAttention Kernel: Forward Pass (Parallelism)</h1>
+  <div class="quarto-categories">
+    <div class="quarto-category">FlashAttention</div>
+    <div class="quarto-category">Transformers</div>
+    <div class="quarto-category">Attention</div>
+    <div class="quarto-category">Compute</div>
+    <div class="quarto-category">Autograd</div>
+    <div class="quarto-category">Parallelism</div>
+    <div class="quarto-category">CUDA</div>
+  </div>
+  </div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Shivam Pandey </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">April 14, 2025</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p>Continuing on my previous blog: <a href="../../posts/flash-30-3-2025-kernelized/index.html"><strong>FlashAttention Kernel: Forward Pass (MATH)</strong></a>, here we will explore the possibility of parallelism in the Forward Pass Kernel with step by step code transform, and finally reaching a stage which is much closer to the <a href="https://docs.nvidia.com/cuda/cuda-c-programming-guide/">CUDA programming model</a>.</p>
+<section id="flash-attention-forward-pass" class="level2">
+<h2 class="anchored" data-anchor-id="flash-attention-forward-pass">Flash Attention Forward Pass:</h2>
+<p>In my last blog we saw how math works in <strong>Flash Attention</strong>, and this was the final expression that we derived there:</p>
+<p><span class="math display">\[\begin{align}
+m_0 = S^{[m, n=0]} \\
+m_{j+1} = \max(m_j, S^{[m, n=j+1]}) \\
+l_0 = \exp(S^{[m, n=0]} - m_0) \\
+l_{j+1} = \sum_{n\in[0 \dots j, j+1]}\exp(S^{[m, n]} - m_{j+1}) \\
+l_{j+1} = \frac{exp(-m_{j})}{\exp(m_{j+1} - m_{j})}\sum_{n\in[0 \dots j]}\exp(S^{[m, n]}) + \exp(S^{[m, n=j+1]} - m_{j+1}) \\
+l_{j+1} = l_{j}\exp(m_{j} - m_{j+1}) + \exp(S^{[m, n=j+1]} - m_{j+1}) \\
+O^{[m, d]}_{0} = \frac{\exp(S^{[m, n=0]} - m_{0}) \cdot V^{[n=0, d]}}{l_{0}} \\
+O^{[m, d]}_{j+1} = \frac{O^{[m, d]}_{j} * l_j}{l_{j+1}} + \frac{\exp(S^{[m, n=j+1]} - m_{j+1}) \cdot V^{[n=j+1, d]}}{l_{j+1}} \\
+\end{align}\]</span></p>
+</section>
+<section id="parallelization-analysis-forward-pass" class="level2">
+<h2 class="anchored" data-anchor-id="parallelization-analysis-forward-pass">Parallelization Analysis: Forward Pass</h2>
+<p>Using above mentioned math expressions for Flash Attention forward pass we can derive the following code (partly pseudo):</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">0</span>, M):</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> j <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">0</span>, N):</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> d <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">0</span>, D):</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>            q_i <span class="op">=</span> Q[i] <span class="co"># S1: No self dependency: [SLoop: i, TLoop: i]</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>            k_j <span class="op">=</span> K[j] <span class="co"># S2: No self dependency: [SLoop: j, TLoop: j]</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>            m_i <span class="op">=</span> m[i] <span class="co"># S3: No self dependency: [SLoop: i, TLoop: i]</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>            l_i <span class="op">=</span> l[i] <span class="co"># S4: No self dependency: [SLoop: i, TLoop: i]</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>            S_ij <span class="op">=</span> q_i <span class="op">@</span> k_j <span class="co"># S5: No self dependency: [SLoop: (i, j), TLoop: (i, j)] # Loop interchange possible # RAW on q_i, and k_j</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>            m_ij <span class="op">=</span> <span class="bu">max</span>(m_i, S_ij) <span class="co"># S6: No self dependency: [SLoop: (i, (i, j)), TLoop: (i, j)] # RAW on m_i and S_ij</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>            l_ij <span class="op">=</span> l_i <span class="op">*</span> exp(m_i <span class="op">-</span> m_ij) <span class="op">+</span> exp(S_ij <span class="op">-</span> m_ij) <span class="co"># S7: No self dependency: [SLoop: (j, (i, (i, j)), ((i, j), (i, j))), TLoop: (i, j)] # RAW on l_i, m_i, m_ij, S_ij, m_ij</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>            o_id <span class="op">=</span> O[i, d] <span class="co"># S8: No self dependency: [SLoop: (i, d), TLoop: (i, d)]</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>            v_jd <span class="op">=</span> V[j, d] <span class="co"># S9: No self dependency: [SLoop: (j, d), TLoop: (j, d)]</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>            o_ijd <span class="op">=</span> o_id <span class="op">*</span> l_i <span class="op">/</span> l_ij <span class="op">+</span> exp(S_ij <span class="op">-</span> m_ij) <span class="op">*</span> v_jd <span class="op">/</span> l_ij <span class="co"># S10: No self dependency: [SLoop: ((i, d), i, (i, j), (i, j), (i, j), (j, d), (i, j)), TLoop: (i, j, d)] # RAW on o_id, l_i, l_ij, S_ij, m_ij, v_jd, l_ij</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>            <span class="co">### Finally assign the results back to buffers</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>            O[i, d] <span class="op">=</span> o_ijd <span class="co"># S11: Aggregation over j # RAW on o_ijd</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>            m[i] <span class="op">=</span> m_ij <span class="co"># S12: Aggregation over j # RAW on m_ij</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>            l[i] <span class="op">=</span> l_ij <span class="co"># S13: Aggregation over j # RAW on l_ij</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>The code is annotated with comments that follows a simple information template:</p>
+<ol type="1">
+<li>The starting of the comments starts with letter <code>S</code> followed by a number, e.g.&nbsp;<code>S2</code>, this indicates an statement along with its given number, so <code>S2</code> stands for <code>statement 2</code>.</li>
+<li>After statement number the comment lists of the statement if dependent on self, i.e.&nbsp;if the variable updated in the statement is further being updated in a future iteration.</li>
+<li>The comment then follows a simple notation for loop iteration order, which consists of two parts <code>Source Loop (SLoop)</code> and <code>Target Loop (TLoop)</code>. In case where a statement consists of multiple variables this entry will become a list of list, where each entry corresponds to following variable used in order. For a variable being used in the statement, the iteration state is denoted by either the loop variable i.e.&nbsp;<code>i</code>, <code>j</code>, or <code>d</code> in this particular case or if the variable is dependent upon multiple iteration loops then it will be a tuple of those variables e.g.&nbsp;<code>(i, d)</code>.</li>
+<li>Following this the comment lists the type of dependency (either of <code>WAW</code>, <code>RAW</code>, and <code>WAR</code>) and corresponding elements to which that dependency applies.</li>
+<li>Sometimes a comment can say something like <code>Aggregation over j</code> which means that the reduction is being performed over that particular loop variable. Though this is generally an inplace operation, for better segregation of dependencies update, and reuse of a variable this can be done by computing a source iteration dependent local variable e.g.&nbsp;<code>o_ijd</code> and then updating it to a variable that is independent of the target loop e.g.&nbsp;<code>O[i, d] = o_ijd</code>.</li>
+</ol>
+</section>
+<section id="data-dependency-graph-ddg" class="level2">
+<h2 class="anchored" data-anchor-id="data-dependency-graph-ddg">Data Dependency Graph (DDG)</h2>
+<p>This graph is derived from the previously annotated code, and represent the data flow and dependency across different statements.</p>
+<p>Here we have mentioned <code>SCC</code> several times, which stands for <code>Strongly Connected Component</code>, it occurs in a graph if all the nodes of a sub-graph are accessible from every other node within that subgraph. In such case parallelization is not possible.</p>
+<blockquote class="blockquote">
+<p>Note: <code>SCCs</code> generally appears with <code>Loop Carried Dependency</code> which is denoted as <code>LC-i/j</code> in the code representing over which loop it appears. E.g. if it’s an <code>LC-i</code> the <code>SCC</code> could not be parallelized over loop <code>i</code>.</p>
+</blockquote>
+<div class="cell" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class="figure"><p></p>
+<div>
+<pre class="mermaid mermaid-js">graph TD
+    S1["S1: Q[i]"]
+    S2["S2: K[j]"]
+    S3["S3: m[i]"]
+    S4["S4: l[i]"]
+    S5["S5: S_ij = f(q_i, k_j)"]
+    S6["S6: m_ij = f(m_i, S_ij)"]
+    S7["S7: l_ij = f(l_i, m_i, m_ij, S_ij, m_ij)"]
+    S8["S8: O[i, d]"]
+    S9["S9: V[j, d]"]
+    S10["S10: o_ijd = f(o_id, l_i, l_ij, S_ij, m_ij, v_jd, l_ij)"]
+    S11["S11: O[i, d] = o_ijd"]
+    S12["S12: m[i] = m_ij"]
+    S13["S13: l[i] = l_ij"]
+
+    %% Intra-iteration dependencies
+    S1 --&gt; S5
+    S2 --&gt; S5
+    S5 --&gt; S6
+    S3 --&gt; S7
+    S5 --&gt; S7
+    S6 --&gt; S7
+    S4 --&gt; S10
+    S5 --&gt; S10
+    S6 --&gt; S10
+    S7 --&gt; S10
+    S9 --&gt; S10
+
+    %%  Force same level for {S11, S12, S13}
+    %% S11 ~~~ S12
+    %% S12 ~~~ S13
+
+    %% Strongly Connected Components (SCCs)
+    subgraph SCC1
+        S3 --&gt; S6
+        S6 --&gt; S12
+        S12 -.-&gt;|LC-j| S3
+    end
+
+    subgraph SCC2
+        S4 --&gt; S7
+        S7 --&gt; S13
+        S13 -.-&gt;|LC-j| S4
+    end
+
+    subgraph SCC3
+        S8 --&gt; S10
+        S10 --&gt; S11
+        S11 -.-&gt;|LC-j| S8
+    end
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+<section id="deductions-from-ddg" class="level3">
+<h3 class="anchored" data-anchor-id="deductions-from-ddg">Deductions from DDG:</h3>
+<ol type="1">
+<li>There is no loop carries dependencies for <code>i</code> and <code>d</code> loop, so both are parallelizable.</li>
+<li>If we <a href="#LIA">analyze the loop order change</a> all of the loop order <code>i&lt;-&gt;j&lt;-&gt;d</code> are valid, because the ony loop carried dependency is in <code>j</code> loop, and that has a positive lex i.e.&nbsp;source loop is <code>j-1</code> and target loop is <code>j</code>.</li>
+<li>For parallelization over <code>j</code> loop we need to localize dependent variables and utilize <code>atomics</code> to communicate across thread.</li>
+</ol>
+</section>
+<section id="LIA" class="level3">
+<h3 class="anchored" data-anchor-id="LIA">Loop Interchange Analysis</h3>
+<p><strong>Question:</strong> If we could interchange the loop <span class="math inline">\(i \leftrightarrow j\)</span> to improve the locality of <code>k_j</code> and <code>v_j</code> as there are only <code>3 reads</code> (<code>q_i</code>, <code>K_j</code>, &amp; <code>v_j</code>) from <code>HBM</code> (excluding outputs and <code>m_i &amp; l_i</code>).</p>
+<p>The inner <code>loop-j</code> is responsible for loading both <code>k_j</code> and <code>v_j</code> from <code>HBM</code> and if the loops are interchanged a single load of <code>k_j</code> and <code>v_j</code> can be used for all of <code>q_i</code>, which when other way around is : a single load of <code>q_i</code> is being used for all <code>k_j</code> and <code>v_j</code> sequential loads.</p>
+<p>For loop interchange one important factor is that <strong>“loop iteration dependence vector should not become lexicographically negative”</strong></p>
+<p><strong>Example:</strong></p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (i<span class="op">=</span><span class="dv">1</span><span class="op">;</span> i<span class="op">&lt;</span>N<span class="op">;</span> i<span class="op">++</span>) {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (j<span class="op">=</span><span class="dv">1</span><span class="op">;</span> j<span class="op">&lt;</span>N<span class="op">;</span> j<span class="op">++</span>) {</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    A[i][j] <span class="op">=</span> A[i<span class="op">-</span><span class="dv">1</span>][j<span class="op">+</span><span class="dv">1</span>]<span class="op">;</span> <span class="op">//</span> RAW dependencies on i <span class="kw">and</span> j</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>In this loop the the direction vector of iteration for the one dependency i.e.&nbsp;<code>A[i-1][j+1]</code> is <code>(1, -1)</code>. Which after switching the loops:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (j<span class="op">=</span><span class="dv">1</span><span class="op">;</span> j<span class="op">&lt;</span>N<span class="op">;</span> j<span class="op">++</span>) {</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (i<span class="op">=</span><span class="dv">1</span><span class="op">;</span> i<span class="op">&lt;</span>N<span class="op">;</span> i<span class="op">++</span>) {</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    A[i][j] <span class="op">=</span> ...</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>becomes <code>(-1, 1)</code> which is called lexicographically negative, and thus doesn’t allows the loop interchange as the loop order would change if the interchange happens.</p>
+<p>Simply stating: in the original loop <code>A[i-1][j+1]</code> comes before <code>A[i][j]</code> and is updated before it. But after reorder <code>A[i][j]</code> will come before and modified than <code>A[i-1][j+1]</code> thus we can’t interchange the loops.</p>
+</section>
+<section id="modified-code-1-improved-locality" class="level3">
+<h3 class="anchored" data-anchor-id="modified-code-1-improved-locality">Modified Code: #1 Improved locality</h3>
+<p>As noted previously taking out some statements out of independent loop iterations increases variable locality, thus can be reused readily, reducing pressure on memory.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">0</span>, M):</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    q_i <span class="op">=</span> Q[i] <span class="co"># S1: No self dependency: [SLoop: i, TLoop: i]</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    m_i <span class="op">=</span> m[i] <span class="co"># S3: No self dependency: [SLoop: i, TLoop: i]</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    l_i <span class="op">=</span> l[i] <span class="co"># S4: No self dependency: [SLoop: i, TLoop: i]</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> j <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">0</span>, N):</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>        k_j <span class="op">=</span> K[j] <span class="co"># S2: No self dependency: [SLoop: j, TLoop: j]</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>        S_ij <span class="op">=</span> q_i <span class="op">@</span> k_j <span class="co"># S5: No self dependency: [SLoop: (i, j), TLoop: (i, j)] # Loop interchange possible # RAW on q_i, and k_j</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>        m_ij <span class="op">=</span> <span class="bu">max</span>(m_i, S_ij) <span class="co"># S6: No self dependency: [SLoop: (i, (i, j)), TLoop: (i, j)] # RAW on m_i and S_ij</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>        l_ij <span class="op">=</span> l_i <span class="op">*</span> exp(m_i <span class="op">-</span> m_ij) <span class="op">+</span> exp(S_{ij} <span class="op">-</span> m_ij) <span class="co"># S7: No self dependency: [SLoop: (j, (i, (i, j)), ((i, j), (i, j))), TLoop: (i, j)] # RAW on l_i, m_i, m_ij, S_ij, m_ij</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> d <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">0</span>, D):</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>            o_id <span class="op">=</span> O[i, d] <span class="co"># S8: No self dependency: [SLoop: (i, d), TLoop: (i, d)]</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>            v_jd <span class="op">=</span> V[j, d] <span class="co"># S9: No self dependency: [SLoop: (j, d), TLoop: (j, d)]</span></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>            o_ijd <span class="op">=</span> o_id <span class="op">*</span> l_i <span class="op">/</span> l_ij <span class="op">+</span> exp(S_ij <span class="op">-</span> m_ij) <span class="op">*</span> v_jd <span class="op">/</span> l_ij <span class="co"># S10: No self dependency: [SLoop: ((i, d), i, (i, j), (i, j), (i, j), (j, d), (i, j)), TLoop: (i, j, d)] # RAW on o_id, l_i, l_ij, S_ij, m_ij, v_jd, l_ij</span></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>            <span class="co">### Finally assign the results back to buffers</span></span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>            O[i, d] <span class="op">=</span> o_ijd <span class="co"># S11: Aggregation over j # RAW on o_ijd</span></span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Independent of `d` loop</span></span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>    m[i] <span class="op">=</span> m_ij <span class="co"># S12: Aggregation over j # RAW on m_ij</span></span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>    l[i] <span class="op">=</span> l_ij <span class="co"># S13: Aggregation over j # RAW on l_ij</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="modified-code-2-i-d-loops-full-parallelization" class="level3">
+<h3 class="anchored" data-anchor-id="modified-code-2-i-d-loops-full-parallelization">Modified Code: #2 <code>i</code> &amp; <code>d</code> loops full parallelization</h3>
+<p>Since there are no self-dependencies in loop iterations <code>i</code> and <code>d</code>, these two loops can be fully parallelized.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Loop Collapsed under parallelization</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="co"># for i in range(0, M):</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>q_i <span class="op">=</span> Q[i, :] <span class="co"># S1: No self dependency: [SLoop: i, TLoop: i]</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>m_i <span class="op">=</span> m[i] <span class="co"># S3: No self dependency: [SLoop: i, TLoop: i]</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>l_i <span class="op">=</span> l[i] <span class="co"># S4: No self dependency: [SLoop: i, TLoop: i]</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>o_i <span class="op">=</span> O[i, :] <span class="co"># S8: No self dependency: [SLoop: (i, d), TLoop: (i, d)]</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> j <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">0</span>, N):</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    k_j <span class="op">=</span> K[j, :] <span class="co"># S2: No self dependency: [SLoop: j, TLoop: j]</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    v_j <span class="op">=</span> V[j, :] <span class="co"># S9: No self dependency: [SLoop: (j, d), TLoop: (j, d)]</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    S_ij <span class="op">=</span> q_i <span class="op">@</span> k_j <span class="co"># S5: No self dependency: [SLoop: (i, j), TLoop: (i, j)] # Loop interchange possible # RAW on q_i, and k_j</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>    m_ij <span class="op">=</span> <span class="bu">max</span>(m_i, S_ij) <span class="co"># S6: No self dependency: [SLoop: (i, (i, j)), TLoop: (i, j)] # RAW on m_i and S_ij</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>    l_ij <span class="op">=</span> l_i <span class="op">*</span> exp(m_i <span class="op">-</span> m_ij) <span class="op">+</span> exp(S_{ij} <span class="op">-</span> m_ij) <span class="co"># S7: No self dependency: [SLoop: (j, (i, (i, j)), ((i, j), (i, j))), TLoop: (i, j)] # RAW on l_i, m_i, m_ij, S_ij, m_ij</span></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Loop Collapsed under parallelization</span></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>    <span class="co"># for d in range(0, D):</span></span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>    o_ij <span class="op">=</span> o_i <span class="op">*</span> l_i <span class="op">/</span> l_ij <span class="op">+</span> exp(S_ij <span class="op">-</span> m_ij) <span class="op">*</span> v_j <span class="op">/</span> l_ij <span class="co"># S10: No self dependency: [SLoop: ((i, d), i, (i, j), (i, j), (i, j), (j, d), (i, j)), TLoop: (i, j, d)] # RAW on o_id, l_i, l_ij, S_ij, m_ij, v_jd, l_ij</span></span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>    o_i <span class="op">=</span> o_ij</span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>    m_i <span class="op">=</span> m_ij</span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>    l_i <span class="op">=</span> l_ij</span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a><span class="co"># Independent of `d` loop</span></span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>O[i] <span class="op">=</span> o_i <span class="co"># S11: Aggregation over j # RAW on o_i</span></span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>m[i] <span class="op">=</span> m_i <span class="co"># S12: Aggregation over j # RAW on m_i</span></span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>l[i] <span class="op">=</span> l_i <span class="co"># S13: Aggregation over j # RAW on l_i</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="modified-code-3-attempt-to-parallelize-loop-j" class="level3">
+<h3 class="anchored" data-anchor-id="modified-code-3-attempt-to-parallelize-loop-j">Modified Code: #3 attempt to parallelize loop <code>j</code></h3>
+<p>Though there are multiple <code>SCCs</code> with <code>LC-j</code>, still we can incorporate those in the CUDA programming model by launching all of the corresponding threads in one shot, while enforcing an order in which threads execute.</p>
+<p>This is generally done with <a href="https://docs.nvidia.com/cuda/cuda-c-programming-guide/#atomicadd"><code>atomics</code> in CUDA</a></p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># assume global variable `counter = 0` which is incremented as per atomics.</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Loop Collapsed under parallelization</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="co"># for i in range(0, M):</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>q_i <span class="op">=</span> Q[i, :] <span class="co"># S1: No self dependency: [SLoop: i, TLoop: i]</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Loop collapsed under parallelization</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="co"># for j in range(0, N):</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>k_j <span class="op">=</span> K[j, :] <span class="co"># S2: No self dependency: [SLoop: j, TLoop: j]</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>v_j <span class="op">=</span> V[j, :] <span class="co"># S9: No self dependency: [SLoop: (j, d), TLoop: (j, d)]</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>S_ij <span class="op">=</span> q_i <span class="op">@</span> k_j <span class="co"># S5: No self dependency: [SLoop: (i, j), TLoop: (i, j)] # Loop interchange possible # RAW on q_i, and k_j</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a><span class="cf">while</span> <span class="va">True</span>:</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> tid <span class="op">==</span> counter:</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>        m_i <span class="op">=</span> m[i]</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>        m_ij <span class="op">=</span> <span class="bu">max</span>(m_i, S_ij) <span class="co"># S6: No self dependency: [SLoop: (i, (i, j)), TLoop: (i, j)] # RAW on m_i and S_ij</span></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>        m[i] <span class="op">=</span> m_ij</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>        l_i <span class="op">=</span> l[i]</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>        l_ij <span class="op">=</span> l_i <span class="op">*</span> exp(m_i <span class="op">-</span> m_ij) <span class="op">+</span> exp(S_ij <span class="op">-</span> m_ij)</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>        l[i] <span class="op">=</span> l_ij</span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>        o_i <span class="op">=</span> O[i, :]</span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>        o_ij <span class="op">=</span> o_i <span class="op">*</span> l_i <span class="op">/</span> l_ij <span class="op">+</span> exp(S_ij <span class="op">-</span> m_ij) <span class="op">*</span> v_j <span class="op">/</span> l_ij</span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>        O[i, :] <span class="op">=</span> o_ij</span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>        atomicadd(counter, <span class="dv">1</span>)<span class="op">;</span></span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a>        <span class="cf">break</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="modified-code-3-attempt-to-parallelize-loop-j-this-time-without-enforcing-an-order" class="level3">
+<h3 class="anchored" data-anchor-id="modified-code-3-attempt-to-parallelize-loop-j-this-time-without-enforcing-an-order">Modified Code: #3 attempt to parallelize loop <code>j</code> this time without enforcing an order</h3>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># assume global variable `counter = 0` which is incremented as per atomics.</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Loop Collapsed under parallelization</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="co"># for i in range(0, M):</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>q_i <span class="op">=</span> Q[i, :] <span class="co"># S1: No self dependency: [SLoop: i, TLoop: i]</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Loop collapsed under parallelization</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="co"># for j in range(0, N):</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>k_j <span class="op">=</span> K[j, :] <span class="co"># S2: No self dependency: [SLoop: j, TLoop: j]</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>v_j <span class="op">=</span> V[j, :] <span class="co"># S9: No self dependency: [SLoop: (j, d), TLoop: (j, d)]</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>S_ij <span class="op">=</span> q_i <span class="op">@</span> k_j <span class="co"># S5: No self dependency: [SLoop: (i, j), TLoop: (i, j)] # Loop interchange possible # RAW on q_i, and k_j</span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Compute complete max till end</span></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>atomic<span class="op">-</span><span class="bu">max</span>(m[i], S_ij)</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>grid.sync()</span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>atomic<span class="op">-</span>add(l[i], exp(S_ij <span class="op">-</span> m[i]))</span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>grid.sync()</span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>atomic<span class="op">-</span>add(o[i], exp(S_ij <span class="op">-</span> m[i]) <span class="op">*</span> v_j <span class="op">/</span> l[i])</span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>grid.sync()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="modified-code-4-attempt-to-parallelize-loop-j-this-time-without-enforcing-an-order" class="level3">
+<h3 class="anchored" data-anchor-id="modified-code-4-attempt-to-parallelize-loop-j-this-time-without-enforcing-an-order">Modified Code: #4 attempt to parallelize loop <code>j</code> this time without enforcing an order</h3>
+<p>Another way to achieve this is <code>Cooperative Thread Arrays (CTA)</code> available in CUDA, <strong>more on this in next blog when we dive deep into CUDA code itself.</strong></p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># assume global variable `counter = 0` which is incremented as per atomics.</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Loop Collapsed under parallelization</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="co"># for i in range(0, M):</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>q_i <span class="op">=</span> Q[i, :] <span class="co"># S1: No self dependency: [SLoop: i, TLoop: i]</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Loop collapsed under parallelization</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="co"># for j in range(0, N):</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>k_j <span class="op">=</span> K[j, :] <span class="co"># S2: No self dependency: [SLoop: j, TLoop: j]</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>v_j <span class="op">=</span> V[j, :] <span class="co"># S9: No self dependency: [SLoop: (j, d), TLoop: (j, d)]</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>S_ij <span class="op">=</span> q_i <span class="op">@</span> k_j <span class="co"># S5: No self dependency: [SLoop: (i, j), TLoop: (i, j)] # Loop interchange possible # RAW on q_i, and k_j</span></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Compute complete max till end</span></span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>maxreductionthroughCTA(m[i], S_ij)</span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>grid.sync()</span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>addreductionthroughCTA(l[i], exp(S_ij <span class="op">-</span> m[i]))</span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>grid.sync()</span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>addreductionthroughCTA(o[i], exp(S_ij <span class="op">-</span> m[i]) <span class="op">*</span> v_j <span class="op">/</span> l[i])</span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>grid.sync()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Wondering where is the code analysis for backward pass: Look at here:</p>
+
+
+</section>
+</section>
+
+<a onclick="window.scrollTo(0, 0); return false;" role="button" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp("https:\/\/shivampr21\.github\.io");
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+      &nbsp;
+    </div>   
+    <div class="nav-footer-center">
+<p>Copyright 2025, Shivam Pandey <span class="citation" data-cites="ShivamPR21">@ShivamPR21</span></p>
+</div>
+    <div class="nav-footer-right">
+      &nbsp;
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>
