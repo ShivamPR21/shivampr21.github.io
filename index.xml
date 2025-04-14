@@ -890,7 +890,7 @@ font-style: inherit;">/</span> l[i])</span>
   <pubDate>Sun, 13 Apr 2025 18:30:00 GMT</pubDate>
 </item>
 <item>
-  <title>FlashAttention Kernel: Forward Pass (Parallelism)</title>
+  <title>FlashAttention Kernel: Backward Pass (Parallelism)</title>
   <dc:creator>Shivam Pandey</dc:creator>
   <link>https://shivampr21.github.io/posts/flash-bwd-pll-14-4-2025-kernelized/</link>
   <description><![CDATA[ 
