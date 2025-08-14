@@ -25,7 +25,7 @@ O^{[m, d]}_{j+1} = \frac{O^{[m, d]}_{j} * l_j}{l_{j+1}} + \frac{\exp(S^{[m, n=j+
 \end{align}
 
 
-## Parallelization Analysis: Forward Pass
+## Parallelization Analysis: Forward Pass {#FWD-PLL}
 Using above mentioned math expressions for Flash Attention forward pass we can derive the following code (partly pseudo):
 
 ```python
@@ -319,4 +319,5 @@ addreductionthroughCTA(o[i], exp(S_ij - m[i]) * v_j / l[i])
 
 grid.sync()
 ```
-Wondering where is the code analysis for backward pass: Look at here:
+
+Wondering where is the code analysis for backward pass, that's coming next [click here](/posts/flash-bwd-pll-14-4-2025-kernelized/index.qmd).
