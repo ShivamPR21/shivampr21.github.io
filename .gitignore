@@ -1,3 +1,11 @@
+# Site build output
+node_modules/
+.astro/
+dist/
+graphify-out/
+tmp/
+.DS_Store
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -10,7 +18,6 @@ __pycache__/
 .Python
 build/
 develop-eggs/
-dist/
 downloads/
 eggs/
 .eggs/

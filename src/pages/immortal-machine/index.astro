@@ -1,0 +1,25 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+const posts = (await getCollection('writing', ({ data }) => !data.draft)).sort((a, b) => (a.data.seriesOrder ?? 0) - (b.data.seriesOrder ?? 0));
+---
+
+<BaseLayout title="Immortal Machine" description="Immortal Machine is Shivam Pandey’s technical publication for essays, experiments, implementations, and research series.">
+  <section class="machine-hero shell">
+    <div class="machine-symbol" aria-hidden="true"><span></span><span></span><span></span></div>
+    <p class="machine-overline">A technical publication by Shivam Pandey</p>
+    <h1>IMMORTAL<br/><em>MACHINE</em></h1>
+    <p class="machine-deck">Notes on machines that learn useful models of the world—and the objectives, representations, actions, and systems that determine what persists.</p>
+    <div class="machine-meta"><span>Essays</span><span>Experiments</span><span>Implementations</span><span>Research series</span></div>
+  </section>
+
+  <section class="machine-manifesto shell">
+    <p class="section-index">Editorial position</p>
+    <div><h2>Show the mechanism.<br/>Keep the uncertainty.</h2><p>Immortal Machine is where the ideas go deep. Each piece should expose the chain from question to formulation to implementation to evidence. It is not a second personal portfolio; it is the publication layer of the same research practice.</p></div>
+  </section>
+
+  <section class="machine-archive shell">
+    <div><p class="section-index">Archive 001</p><h2>KERNELIZED</h2><p>The first migrated series. Six notes tracing AI kernels from derivation to parallel structure.</p></div>
+    <ol>{posts.map((post) => <li><a href={`/posts/${post.id}/`}><span>{String(post.data.seriesOrder ?? 0).padStart(2, '0')}</span>{post.data.title}</a></li>)}</ol>
+  </section>
+</BaseLayout>

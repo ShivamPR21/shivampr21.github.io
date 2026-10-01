@@ -1,0 +1,46 @@
+---
+import { getCollection, render, type CollectionEntry } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('writing', ({ data }) => !data.draft);
+  return posts.map((post) => ({ params: { slug: post.id }, props: { post } }));
+}
+
+interface Props { post: CollectionEntry<'writing'>; }
+const { post } = Astro.props;
+const { Content, headings } = await render(post);
+const formatDate = (date: Date) => new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'long', year: 'numeric' }).format(date);
+const words = post.body?.split(/\s+/).length ?? 0;
+const readingTime = Math.max(1, Math.round(words / 210));
+const articleJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'TechArticle',
+  headline: post.data.title,
+  description: post.data.description,
+  datePublished: post.data.date.toISOString(),
+  dateModified: (post.data.updated ?? post.data.date).toISOString(),
+  author: { '@type': 'Person', name: 'Shivam Pandey', url: 'https://shivampr21.com' },
+  mainEntityOfPage: new URL(Astro.url.pathname, Astro.site).href,
+};
+---
+
+<BaseLayout title={post.data.title} description={post.data.description} image={post.data.image} article>
+  <script type="application/ld+json" set:html={JSON.stringify(articleJsonLd)} />
+  <article class="article-page shell">
+    <header class="article-head">
+      <a class="article-back" href="/writing/">Writing / {post.data.series ?? 'Notes'}</a>
+      <p class="article-kicker">{post.data.categories.slice(0, 4).join(' · ')}</p>
+      <h1>{post.data.title}</h1>
+      <p class="article-deck">{post.data.description}</p>
+      <div class="article-meta"><span>Shivam Pandey</span><time datetime={post.data.date.toISOString()}>{formatDate(post.data.date)}</time><span>{readingTime} min read</span></div>
+    </header>
+    <div class="article-grid">
+      <aside class="article-toc" aria-label="On this page">
+        <p>On this page</p>
+        <ol>{headings.filter((heading) => heading.depth <= 3).map((heading) => <li class={`depth-${heading.depth}`}><a href={`#${heading.slug}`}>{heading.text}</a></li>)}</ol>
+      </aside>
+      <div class="prose"><Content /></div>
+    </div>
+  </article>
+</BaseLayout>

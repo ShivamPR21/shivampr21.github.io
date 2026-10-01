@@ -1,0 +1,24 @@
+---
+const currentPath = Astro.url.pathname;
+const nav = [
+  { href: '/research/', label: 'Research' },
+  { href: '/writing/', label: 'Writing' },
+  { href: '/about/', label: 'About' },
+];
+---
+
+<header class="site-header">
+  <a class="identity" href="/" aria-label="Shivam Pandey, home">
+    <span class="identity-mark" aria-hidden="true">SP</span>
+    <span class="identity-copy">Shivam Pandey<small>AI Research Engineer</small></span>
+  </a>
+  <nav aria-label="Primary navigation">
+    {nav.map((item) => (
+      <a href={item.href} aria-current={currentPath.startsWith(item.href) ? 'page' : undefined}>{item.label}</a>
+    ))}
+  </nav>
+  <a class="im-link" href="/immortal-machine/" aria-label="Immortal Machine publication">
+    <span class="im-orbit" aria-hidden="true"></span>
+    <span>IM</span>
+  </a>
+</header>

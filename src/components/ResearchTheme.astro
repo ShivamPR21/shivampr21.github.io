@@ -1,0 +1,18 @@
+---
+interface Props {
+  index: string;
+  accent: string;
+  title: string;
+  status: string;
+  description: string;
+  topics: readonly string[];
+}
+const { index, accent, title, status, description, topics } = Astro.props;
+---
+
+<article class={`research-theme research-theme--${accent}`}>
+  <header><span>{index}</span><p>{status}</p></header>
+  <h3>{title}</h3>
+  <p>{description}</p>
+  <ul>{topics.map((topic) => <li>{topic}</li>)}</ul>
+</article>

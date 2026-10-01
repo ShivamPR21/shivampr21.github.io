@@ -1,0 +1,76 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PolicyField from '../components/PolicyField.astro';
+import ResearchTheme from '../components/ResearchTheme.astro';
+import WorkRow from '../components/WorkRow.astro';
+import { getCollection } from 'astro:content';
+import { researchThemes, selectedWork } from '../data/site';
+
+const latestPosts = (await getCollection('writing', ({ data }) => !data.draft)).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf() || (b.data.seriesOrder ?? 0) - (a.data.seriesOrder ?? 0)).slice(0, 3);
+---
+
+<BaseLayout>
+  <section class="hero shell">
+    <div class="hero-copy">
+      <p class="eyebrow"><span>AI research practice</span><span>Bengaluru, India</span></p>
+      <h1>I study how <em>objectives</em> become behaviour.</h1>
+      <p class="hero-intro">I’m Shivam Pandey, an AI Research Engineer working across embodied intelligence, foundation models, interpretability, and the high-performance systems that make ambitious experiments possible.</p>
+      <div class="hero-actions">
+        <a class="button button--primary" href="/research/">Explore the research</a>
+        <a class="text-link" href="/writing/">Read field notes <span aria-hidden="true">↗</span></a>
+      </div>
+      <dl class="hero-spectrum" aria-label="Research spectrum">
+        <div><dt>01</dt><dd>Learning<br/>signals</dd></div>
+        <div><dt>02</dt><dd>World<br/>models</dd></div>
+        <div><dt>03</dt><dd>Policies &amp;<br/>behaviour</dd></div>
+        <div><dt>04</dt><dd>Systems &amp;<br/>evaluation</dd></div>
+      </dl>
+    </div>
+    <PolicyField />
+  </section>
+
+  <section class="thesis shell" aria-labelledby="thesis-title">
+    <p class="section-index">00 / Research thesis</p>
+    <div>
+      <h2 id="thesis-title">Intelligence is not one layer of the stack.</h2>
+      <p>My work connects the mathematical foundations of learning, the behaviour that emerges from them, and the systems required to test both. The useful questions live in the hand-offs: objective to representation, representation to action, and action to consequence.</p>
+    </div>
+  </section>
+
+  <section class="home-themes shell" aria-labelledby="themes-title">
+    <div class="section-heading">
+      <p class="section-index">01 / Research field</p>
+      <h2 id="themes-title">One programme.<br/>Three levels of inquiry.</h2>
+    </div>
+    <div class="theme-grid">
+      {researchThemes.map((theme) => <ResearchTheme {...theme} />)}
+    </div>
+  </section>
+
+  <section class="selected-work shell">
+    <div class="section-heading"><p class="section-index">02 / Selected work</p><h2>Questions made executable.</h2></div>
+    <div class="work-list">{selectedWork.map((work) => <WorkRow {...work} />)}</div>
+  </section>
+
+  <section class="home-writing shell">
+    <div class="section-heading"><p class="section-index">03 / Recent writing</p><h2>Follow the derivation.</h2></div>
+    <div class="latest-grid">
+      {latestPosts.map((post) => (
+        <a class="latest-note" href={`/posts/${post.id}/`}>
+          <p>{post.data.series} / {String(post.data.seriesOrder ?? 0).padStart(2, '0')}</p>
+          <h3>{post.data.title}</h3>
+          <span>{post.data.description}</span>
+        </a>
+      ))}
+    </div>
+    <a class="text-link all-writing" href="/writing/">All technical writing <span aria-hidden="true">↗</span></a>
+  </section>
+
+  <section class="machine-invite shell">
+    <div class="machine-mini" aria-hidden="true"><span></span></div>
+    <p class="section-index">A publication by Shivam Pandey</p>
+    <h2>IMMORTAL <em>MACHINE</em></h2>
+    <p>Deeper essays, experiments, implementations, and research series—published once, connected back to the personal research practice.</p>
+    <a class="button button--primary" href="/immortal-machine/">Enter the publication</a>
+  </section>
+</BaseLayout>

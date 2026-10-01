@@ -1,0 +1,41 @@
+<figure class="policy-field" data-policy-field aria-labelledby="policy-field-caption">
+  <div class="field-stage">
+    <svg class="field-fallback" viewBox="0 0 800 680" role="img" aria-label="Trajectories moving through a learned representation field">
+      <defs>
+        <radialGradient id="field-glow" cx="50%" cy="45%" r="52%">
+          <stop offset="0" stop-color="#ffb52f" stop-opacity=".28" />
+          <stop offset=".42" stop-color="#ff6644" stop-opacity=".10" />
+          <stop offset="1" stop-color="#ffb52f" stop-opacity="0" />
+        </radialGradient>
+        <filter id="soft-glow"><feGaussianBlur stdDeviation="4" /></filter>
+      </defs>
+      <rect width="800" height="680" fill="url(#field-glow)" />
+      <g fill="none" stroke-linecap="round">
+        <path d="M76 471C220 337 159 160 360 218s214 269 372 84" stroke="#ffb52f" stroke-opacity=".38" />
+        <path d="M47 382c190-51 157-270 380-191s146 273 319 291" stroke="#ffe36e" stroke-opacity=".22" />
+        <path d="M131 573c69-225 287-47 315-302S630 179 749 113" stroke="#ff6644" stroke-opacity=".3" />
+      </g>
+      <g fill="#fff0b6" filter="url(#soft-glow)">
+        <circle cx="205" cy="343" r="5"/><circle cx="370" cy="220" r="4"/><circle cx="550" cy="330" r="6"/><circle cx="648" cy="248" r="4"/>
+      </g>
+      <g fill="#fff8e8">
+        <circle cx="205" cy="343" r="2"/><circle cx="370" cy="220" r="2"/><circle cx="550" cy="330" r="2"/><circle cx="648" cy="248" r="2"/>
+      </g>
+    </svg>
+    <canvas aria-hidden="true"></canvas>
+    <div class="field-crosshair" aria-hidden="true"></div>
+    <span class="field-label field-label--objective">01 / objective</span>
+    <span class="field-label field-label--representation">02 / representation</span>
+    <span class="field-label field-label--policy">03 / policy</span>
+    <span class="field-label field-label--consequence">04 / consequence</span>
+    <span class="field-status" aria-live="polite">adaptive field</span>
+  </div>
+  <figcaption id="policy-field-caption">
+    <span>Policy field 001</span>
+    <p>Move through the field. Local trajectories reorganise around your intervention.</p>
+  </figcaption>
+</figure>
+
+<script>
+  import '../scripts/policy-field';
+</script>
