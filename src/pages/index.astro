@@ -2,9 +2,8 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PolicyField from '../components/PolicyField.astro';
 import ResearchTheme from '../components/ResearchTheme.astro';
-import WorkRow from '../components/WorkRow.astro';
 import { getCollection } from 'astro:content';
-import { researchThemes, selectedWork } from '../data/site';
+import { researchThemes } from '../data/site';
 
 const latestPosts = (await getCollection('writing', ({ data }) => !data.draft)).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf() || (b.data.seriesOrder ?? 0) - (a.data.seriesOrder ?? 0)).slice(0, 3);
 ---
@@ -47,13 +46,8 @@ const latestPosts = (await getCollection('writing', ({ data }) => !data.draft)).
     </div>
   </section>
 
-  <section class="selected-work shell">
-    <div class="section-heading"><p class="section-index">02 / Selected work</p><h2>Questions made executable.</h2></div>
-    <div class="work-list">{selectedWork.map((work) => <WorkRow {...work} />)}</div>
-  </section>
-
   <section class="home-writing shell">
-    <div class="section-heading"><p class="section-index">03 / Recent writing</p><h2>Follow the derivation.</h2></div>
+    <div class="section-heading"><p class="section-index">02 / Published material</p><h2>Follow the derivation.</h2></div>
     <div class="latest-grid">
       {latestPosts.map((post) => (
         <a class="latest-note" href={`/posts/${post.id}/`}>

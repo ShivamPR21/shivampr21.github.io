@@ -24,38 +24,3 @@ export const researchThemes = [
     topics: ['GPU kernels', 'Distributed training', 'Efficient inference', 'Scalable evaluation'],
   },
 ] as const;
-
-export const selectedWork = [
-  {
-    index: 'A',
-    title: 'KERNELIZED',
-    kind: 'Published technical series',
-    description: 'Six public notes deriving reduction, softmax, and FlashAttention kernels from mathematics through data dependencies and parallel execution.',
-    href: '/writing/',
-    meta: 'Math · Autograd · CUDA',
-  },
-  {
-    index: 'B',
-    title: 'CLORT',
-    kind: 'Public research project',
-    description: 'An open implementation exploring contrastive learning for online, real-time 3D tracking.',
-    href: 'https://github.com/ShivamPR21/CLORT',
-    meta: 'Representation learning · Tracking',
-  },
-  {
-    index: 'C',
-    title: 'LlamaX',
-    kind: 'Public systems repository',
-    description: 'A repository for fast, scalable, and efficient implementations following the evolution of language-model research.',
-    href: 'https://github.com/ShivamPR21/LlamaX',
-    meta: 'Foundation models · Systems',
-  },
-  {
-    index: 'D',
-    title: 'laniakea',
-    kind: 'Public experimental code',
-    description: 'A compact CUDA extension workspace for building and studying custom kernels.',
-    href: 'https://github.com/ShivamPR21/laniakea',
-    meta: 'CUDA · C++ · Python',
-  },
-] as const;

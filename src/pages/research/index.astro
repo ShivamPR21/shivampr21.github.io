@@ -1,28 +1,22 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import ResearchTheme from '../../components/ResearchTheme.astro';
-import WorkRow from '../../components/WorkRow.astro';
-import { researchThemes, selectedWork } from '../../data/site';
+import { researchThemes } from '../../data/site';
 ---
 
 <BaseLayout title="Research" description="Research directions and selected public work by Shivam Pandey across embodied intelligence, world models, interpretability, and AI systems.">
   <header class="page-head shell">
     <p class="section-index">01 / Research</p>
     <h1>Questions that cross<br/><em>the stack.</em></h1>
-    <p>I work where learning signals, representations, action, and compute meet. The programme below separates active directions from public, completed artifacts.</p>
+    <p>I work where learning signals, representations, action, and compute meet. The programme below separates active research directions from established technical practice.</p>
   </header>
 
   <section class="theme-grid shell" aria-label="Research themes">
     {researchThemes.map((theme) => <ResearchTheme {...theme} />)}
   </section>
 
-  <section class="selected-work shell">
-    <div class="section-heading"><p class="section-index">02 / Selected work</p><h2>Public evidence, not a catalogue.</h2></div>
-    <div class="work-list">{selectedWork.map((work) => <WorkRow {...work} />)}</div>
-  </section>
-
   <section class="research-note shell">
-    <p class="section-index">03 / Current focus</p>
+    <p class="section-index">02 / Current focus</p>
     <div>
       <h2>Alignment becomes concrete when a model can act.</h2>
       <p>My current direction asks how learned world representations, training signals, and policies interact in embodied settings. The emphasis is diagnostic: identify what a policy uses, where behaviour changes, and which scenarios expose the difference between the intended objective and the learned one.</p>
