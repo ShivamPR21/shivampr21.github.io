@@ -1,6 +1,7 @@
 ---
 import { getCollection, render, type CollectionEntry } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import MermaidDiagrams from '../../components/MermaidDiagrams.astro';
 
 export async function getStaticPaths() {
   const posts = await getCollection('writing', ({ data }) => !data.draft);
@@ -43,4 +44,5 @@ const articleJsonLd = {
       <div class="prose"><Content /></div>
     </div>
   </article>
+  <MermaidDiagrams />
 </BaseLayout>

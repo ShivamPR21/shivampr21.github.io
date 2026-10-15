@@ -1,0 +1,109 @@
+<script>
+  const diagramBlocks = Array.from(
+    document.querySelectorAll<HTMLPreElement>('.prose pre[data-language="mermaid"]'),
+  );
+
+  if (diagramBlocks.length > 0) {
+    const { default: mermaid } = await import('mermaid');
+
+    mermaid.initialize({
+      startOnLoad: false,
+      securityLevel: 'strict',
+      theme: 'base',
+      deterministicIds: true,
+      deterministicIDSeed: window.location.pathname,
+      flowchart: {
+        curve: 'basis',
+        htmlLabels: true,
+        nodeSpacing: 34,
+        rankSpacing: 52,
+        padding: 16,
+        useMaxWidth: false,
+      },
+      themeVariables: {
+        background: '#1c0e12',
+        primaryColor: '#2a1516',
+        primaryTextColor: '#fff6e7',
+        primaryBorderColor: '#ffb52f',
+        secondaryColor: '#32191a',
+        secondaryTextColor: '#fff6e7',
+        secondaryBorderColor: '#ff6644',
+        tertiaryColor: '#211014',
+        tertiaryTextColor: '#fff6e7',
+        tertiaryBorderColor: '#6d4038',
+        lineColor: '#df9a38',
+        textColor: '#fff6e7',
+        mainBkg: '#2a1516',
+        nodeBorder: '#ffb52f',
+        clusterBkg: '#1a0d11',
+        clusterBorder: '#ff6644',
+        edgeLabelBackground: '#11080b',
+        fontFamily: 'Manrope Variable, system-ui, sans-serif',
+        fontSize: '14px',
+      },
+    });
+
+    const nearestHeading = (block: HTMLPreElement) => {
+      let sibling = block.previousElementSibling;
+      while (sibling && !sibling.matches('h2, h3, h4')) sibling = sibling.previousElementSibling;
+      return sibling?.textContent?.trim() || 'Technical diagram';
+    };
+
+    for (const [index, block] of diagramBlocks.entries()) {
+      const source = block.textContent?.trim() ?? '';
+      const title = nearestHeading(block);
+      const figure = document.createElement('figure');
+      const chrome = document.createElement('figcaption');
+      const titleElement = document.createElement('span');
+      const status = document.createElement('span');
+      const stage = document.createElement('div');
+      const sourceDetails = document.createElement('details');
+      const sourceSummary = document.createElement('summary');
+      const sourceBlock = block.cloneNode(true) as HTMLPreElement;
+
+      figure.className = 'diagram-shell';
+      figure.dataset.diagramState = 'rendering';
+      chrome.className = 'diagram-chrome';
+      titleElement.className = 'diagram-title';
+      titleElement.textContent = title;
+      status.className = 'diagram-status';
+      status.textContent = 'SVG / RENDERING';
+      stage.className = 'diagram-stage';
+      stage.setAttribute('aria-busy', 'true');
+      sourceDetails.className = 'diagram-source';
+      sourceSummary.textContent = 'View diagram source';
+      sourceBlock.className = 'diagram-source-code';
+      sourceBlock.removeAttribute('data-language');
+      sourceBlock.removeAttribute('style');
+
+      sourceDetails.append(sourceSummary, sourceBlock);
+      chrome.append(titleElement, status);
+      figure.append(chrome, stage, sourceDetails);
+      block.replaceWith(figure);
+
+      try {
+        const renderId = `diagram-${index}-${Math.random().toString(36).slice(2, 9)}`;
+        const { svg, bindFunctions } = await mermaid.render(renderId, source);
+        stage.innerHTML = svg;
+        bindFunctions?.(stage);
+
+        const renderedSvg = stage.querySelector('svg');
+        renderedSvg?.setAttribute('role', 'img');
+        renderedSvg?.setAttribute('aria-label', `${title}. Dependency diagram.`);
+        renderedSvg?.removeAttribute('height');
+
+        stage.setAttribute('aria-busy', 'false');
+        status.textContent = 'SVG / RENDERED';
+        figure.dataset.diagramState = 'ready';
+      } catch (error) {
+        stage.replaceChildren();
+        sourceDetails.open = true;
+        stage.setAttribute('aria-busy', 'false');
+        stage.textContent = 'The diagram could not be rendered. Its source is preserved below.';
+        status.textContent = 'SOURCE / FALLBACK';
+        figure.dataset.diagramState = 'error';
+        console.error('Mermaid diagram render failed', error);
+      }
+    }
+  }
+</script>

@@ -223,6 +223,23 @@
   .prose th, .prose td { padding: .65rem .8rem; border: 1px solid var(--line); text-align: left; }
   .prose hr { border: 0; border-top: 1px solid var(--line); }
   .prose .katex-display { overflow-x: auto; overflow-y: hidden; padding: .8rem 0; font-size: .92em; }
+  .prose .diagram-shell { margin-block: 3rem; overflow: hidden; border: 1px solid var(--line); background: var(--ink-soft); }
+  .prose .diagram-chrome { display: flex; justify-content: space-between; gap: 1rem; padding: .8rem 1rem; border-bottom: 1px solid var(--line); color: var(--muted); font-size: .62rem; font-weight: 750; line-height: 1.3; letter-spacing: .09em; text-transform: uppercase; }
+  .prose .diagram-title { color: var(--text); }
+  .prose .diagram-status { flex: 0 0 auto; color: var(--sun); }
+  .prose .diagram-status::before { content: ''; display: inline-block; width: .36rem; aspect-ratio: 1; margin-right: .5rem; border-radius: 50%; background: currentColor; box-shadow: 0 0 .65rem currentColor; }
+  .prose .diagram-stage { min-height: 18rem; overflow: auto; padding: clamp(1rem, 3vw, 2.25rem); background: radial-gradient(circle at 50% 45%, color-mix(in oklch, var(--sun) 8%, transparent), transparent 34rem), linear-gradient(145deg, color-mix(in oklch, var(--surface), transparent 38%), var(--ink-soft)); scrollbar-color: var(--line) transparent; }
+  .prose .diagram-stage[aria-busy='true'] { display: grid; place-items: center; }
+  .prose .diagram-stage[aria-busy='true']::after { content: 'Resolving graph…'; color: var(--muted); font-size: .66rem; letter-spacing: .09em; text-transform: uppercase; }
+  .prose .diagram-stage svg { display: block; width: max(100%, 44rem) !important; max-width: none !important; height: auto !important; margin-inline: auto; }
+  .prose .diagram-stage .node rect, .prose .diagram-stage .node polygon, .prose .diagram-stage .node path { filter: drop-shadow(0 8px 16px color-mix(in oklch, black 32%, transparent)); }
+  .prose .diagram-stage .cluster rect { rx: 0; filter: drop-shadow(0 10px 24px color-mix(in oklch, black 25%, transparent)); }
+  .prose .diagram-stage .edgeLabel { color: var(--text); }
+  .prose .diagram-source { border-top: 1px solid var(--line); }
+  .prose .diagram-source summary { padding: .8rem 1rem; color: var(--muted); cursor: pointer; font-size: .67rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+  .prose .diagram-source summary:hover { color: var(--sun); }
+  .prose .diagram-source-code { margin: 0; border: 0; border-top: 1px solid var(--line); white-space: pre; }
+  .prose .diagram-shell[data-diagram-state='error'] .diagram-status { color: var(--coral); }
   .prose .article-figure { margin-block: 2.5rem; }
   .prose .article-figure img { width: 100%; border: 1px solid var(--line); background: var(--ink-soft); }
   .prose .article-figure figcaption { display: flex; justify-content: space-between; gap: 1rem; margin-top: .75rem; color: var(--muted); font-size: .72rem; line-height: 1.45; }
