@@ -14,6 +14,7 @@ const writing = defineCollection({
     series: z.string().optional(),
     seriesOrder: z.number().optional(),
     image: z.string().optional(),
+    publication: z.literal('immortal-machine').optional(),
     draft: z.boolean().default(false),
   }),
 });

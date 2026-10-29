@@ -1,0 +1,68 @@
+---
+import '@fontsource-variable/manrope';
+import '@fontsource-variable/newsreader/wght-italic.css';
+import 'katex/dist/katex.min.css';
+import '../../../src/styles/global.css';
+import PublicationHeader from '../components/PublicationHeader.astro';
+import PublicationFooter from '../components/PublicationFooter.astro';
+import { PERSONAL_ORIGIN, PUBLICATION_ORIGIN, PUBLICATION_GITHUB } from '../../../src/lib/publication';
+
+interface Props { title?: string; description?: string; image?: string; article?: boolean; }
+const {
+  title = 'Immortal Machine',
+  description = 'A technical publication by Shivam Pandey: mathematical foundations, learning systems, GPU kernels, and the path from formulation to evidence.',
+  image,
+  article = false,
+} = Astro.props;
+const fullTitle = title === 'Immortal Machine' ? title : `${title} — Immortal Machine`;
+const canonical = new URL(Astro.url.pathname, PUBLICATION_ORIGIN).href;
+const identityJsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'Organization',
+      '@id': `${PUBLICATION_ORIGIN}/#publication`,
+      name: 'Immortal Machine',
+      url: PUBLICATION_ORIGIN,
+      sameAs: [PUBLICATION_GITHUB],
+      founder: { '@type': 'Person', name: 'Shivam Pandey', url: PERSONAL_ORIGIN },
+    },
+    {
+      '@type': 'WebSite',
+      '@id': `${PUBLICATION_ORIGIN}/#website`,
+      name: 'Immortal Machine',
+      url: PUBLICATION_ORIGIN,
+      publisher: { '@id': `${PUBLICATION_ORIGIN}/#publication` },
+    },
+  ],
+};
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="theme-color" content="#11080b" />
+    <meta name="description" content={description} />
+    <meta name="generator" content={Astro.generator} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="alternate" type="application/rss+xml" title="Immortal Machine — Writing" href="/rss.xml" />
+    <meta property="og:type" content={article ? 'article' : 'website'} />
+    <meta property="og:site_name" content="Immortal Machine" />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    {image && <meta property="og:image" content={new URL(image, PUBLICATION_ORIGIN)} />}
+    <meta name="twitter:card" content={image ? 'summary_large_image' : 'summary'} />
+    <meta name="twitter:creator" content="@ShivamPR21" />
+    <script type="application/ld+json" set:html={JSON.stringify(identityJsonLd)} />
+    <title>{fullTitle}</title>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <PublicationHeader />
+    <main id="main"><slot /></main>
+    <PublicationFooter />
+  </body>
+</html>

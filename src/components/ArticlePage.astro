@@ -1,0 +1,38 @@
+---
+import { render, type CollectionEntry } from 'astro:content';
+import MermaidDiagrams from './MermaidDiagrams.astro';
+import ArticleContents from './ArticleContents.astro';
+import { PERSONAL_ORIGIN } from '../lib/publication';
+
+interface Props { post: CollectionEntry<'writing'>; canonical: string; }
+const { post, canonical } = Astro.props;
+const { Content, headings } = await render(post);
+const formatDate = (date: Date) => new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'long', year: 'numeric' }).format(date);
+const words = post.body?.split(/\s+/).length ?? 0;
+const readingTime = Math.max(1, Math.round(words / 210));
+const articleJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'TechArticle',
+  headline: post.data.title,
+  description: post.data.description,
+  datePublished: post.data.date.toISOString(),
+  dateModified: (post.data.updated ?? post.data.date).toISOString(),
+  author: { '@type': 'Person', name: post.data.author, url: PERSONAL_ORIGIN },
+  mainEntityOfPage: canonical,
+};
+---
+<script type="application/ld+json" set:html={JSON.stringify(articleJsonLd)} />
+<article class="article-page shell">
+  <header class="article-head">
+    <a class="article-back" href="/writing/">Writing / {post.data.series ?? 'Notes'}</a>
+    <p class="article-kicker">{post.data.categories.slice(0, 4).join(' · ')}</p>
+    <h1>{post.data.title}</h1>
+    <p class="article-deck">{post.data.description}</p>
+    <div class="article-meta"><span>{post.data.author}</span><time datetime={post.data.date.toISOString()}>{formatDate(post.data.date)}</time><span>{readingTime} min read</span></div>
+  </header>
+  <div class="article-grid">
+    <ArticleContents headings={headings} />
+    <div class="prose"><Content /></div>
+  </div>
+</article>
+<MermaidDiagrams />

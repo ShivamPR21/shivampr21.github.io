@@ -1,29 +1,30 @@
 ---
 import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { postHref, publicationHomeHref } from '../../lib/publication';
 
 const posts = (await getCollection('writing', ({ data }) => !data.draft)).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf() || (b.data.seriesOrder ?? 0) - (a.data.seriesOrder ?? 0));
 const formatDate = (date: Date) => new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(date);
 ---
 
-<BaseLayout title="Writing" description="Technical writing by Shivam Pandey on learning systems, GPU kernels, and the path from mathematics to implementation.">
+<BaseLayout title="Writing" description="Mathematical references and technical writing by Shivam Pandey on calculus, tensor operators, autodiff, learning systems, and GPU kernels.">
   <header class="page-head page-head--writing shell">
     <p class="section-index">02 / Writing</p>
     <h1>Working notes from<br/><em>inside the machine.</em></h1>
-    <p>Derivations, implementations, and experiments written to expose the path—not only the result. New long-form work will be published through <a href="/immortal-machine/">Immortal Machine</a>; the KERNELIZED archive remains here and fully readable.</p>
+    <p>Mathematical references, derivations, implementations, and experiments tracing the path from an idea to a working system. Explore the <a href={publicationHomeHref()}>Immortal Machine</a> publication and the KERNELIZED archive alongside new research notes.</p>
   </header>
 
   <section class="series-intro shell">
-    <div><span>Series 001</span><h2>KERNELIZED</h2></div>
-    <p>Six notes on reduction, softmax, and FlashAttention: from tensor notation and autodiff to dependency graphs and parallel execution.</p>
+    <div><span>Notes &amp; references</span><h2>From foundations<br/>to implementation.</h2></div>
+    <p>Calculus, tensor derivatives, and integral operators, alongside the KERNELIZED series on reduction, softmax, and FlashAttention.</p>
   </section>
 
   <ol class="post-list shell">
     {posts.map((post) => (
       <li>
-        <a href={`/posts/${post.id}/`}>
+        <a href={postHref(post)}>
           <span class="post-number">{String(post.data.seriesOrder ?? 0).padStart(2, '0')}</span>
-          <div><p>{post.data.categories.slice(0, 3).join(' · ')}</p><h2>{post.data.title}</h2><span>{post.data.description}</span></div>
+          <div><p>{post.data.series ? post.data.series + ' · ' : ''}{post.data.categories.slice(0, 3).join(' · ')}</p><h2>{post.data.title}</h2><span>{post.data.description}</span></div>
           <time datetime={post.data.date.toISOString()}>{formatDate(post.data.date)}</time>
           <span class="post-open" aria-hidden="true">↗</span>
         </a>

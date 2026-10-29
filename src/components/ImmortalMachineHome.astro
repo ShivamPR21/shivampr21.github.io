@@ -1,0 +1,39 @@
+---
+import { getCollection } from 'astro:content';
+import { isPublicationPost, postHref, type SiteTarget } from '../lib/publication';
+interface Props { target?: SiteTarget; }
+const { target = 'personal' } = Astro.props;
+const publishedPosts = await getCollection('writing', ({ data }) => !data.draft);
+const posts = publishedPosts.filter((post) => post.data.series === 'KERNELIZED').sort((a, b) => (a.data.seriesOrder ?? 0) - (b.data.seriesOrder ?? 0));
+const references = publishedPosts.filter((post) => isPublicationPost(post) || post.data.series === 'Mathematical Foundations').sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+---
+<section class="machine-hero shell">
+  <div class="machine-symbol" aria-hidden="true"><span></span><span></span><span></span></div>
+  <p class="machine-overline">A technical publication by Shivam Pandey</p>
+  <h1>IMMORTAL<br/><em>MACHINE</em></h1>
+  <p class="machine-deck">Notes on machines that learn useful models of the world—and the objectives, representations, actions, and systems that determine what persists.</p>
+  <div class="machine-meta"><span>Essays</span><span>Experiments</span><span>Implementations</span><span>Research series</span></div>
+</section>
+
+<section class="machine-manifesto shell">
+  <p class="section-index">Editorial position</p>
+  <div><h2>Show the mechanism.<br/>Keep the uncertainty.</h2><p>Immortal Machine is where the ideas go deep. Each piece should expose the chain from question to formulation to implementation to evidence. It is not a second personal portfolio; it is the publication layer of the same research practice.</p></div>
+</section>
+
+{references.length > 0 && (
+  <section class="machine-archive shell" id="foundations" aria-labelledby="foundations-title">
+    <div>
+      <p class="section-index">Mathematical Foundations</p>
+      <h2 id="foundations-title">The calculus<br/>behind the computation.</h2>
+      <p>Reference notes on derivatives, integrals, and the tensor operators connecting mathematical structure to learning systems.</p>
+    </div>
+    <ol>{references.map((post) => (
+      <li><a href={postHref(post, target)}><span>{String(post.data.seriesOrder ?? 1).padStart(2, '0')}</span>{post.data.title}</a></li>
+    ))}</ol>
+  </section>
+)}
+
+<section class="machine-archive shell" id="kernelized" aria-labelledby="kernelized-title">
+  <div><p class="section-index">Archive 001</p><h2 id="kernelized-title">KERNELIZED</h2><p>Six notes tracing AI kernels from derivation to parallel structure.</p></div>
+  <ol>{posts.map((post) => <li><a href={postHref(post, target)}><span>{String(post.data.seriesOrder ?? 0).padStart(2, '0')}</span>{post.data.title}</a></li>)}</ol>
+</section>

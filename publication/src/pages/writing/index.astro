@@ -1,0 +1,24 @@
+---
+import { getCollection } from 'astro:content';
+import PublicationLayout from '../../layouts/PublicationLayout.astro';
+import { isPublicationListing, newestFirst, postHref } from '../../../../src/lib/publication';
+const posts = (await getCollection('writing', ({ data }) => !data.draft)).filter(isPublicationListing).sort(newestFirst);
+const formatDate = (date: Date) => new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(date);
+---
+<PublicationLayout title="Writing" description="Mathematical foundations, tensor operators, and the KERNELIZED archive: technical writing by Shivam Pandey.">
+  <header class="page-head page-head--writing shell">
+    <p class="section-index">Immortal Machine / Writing</p>
+    <h1>From formulation<br/><em>to evidence.</em></h1>
+    <p>Mathematical references, derivations, implementations, and experiments. Explore the Mathematical Foundations references and the KERNELIZED archive.</p>
+  </header>
+  <ol class="post-list shell">
+    {posts.map((post) => (
+      <li><a href={postHref(post, 'publication')}>
+        <span class="post-number">{String(post.data.seriesOrder ?? 0).padStart(2, '0')}</span>
+        <div><p>{post.data.series ? post.data.series + ' · ' : ''}{post.data.categories.slice(0, 3).join(' · ')}</p><h2>{post.data.title}</h2><span>{post.data.description}</span></div>
+        <time datetime={post.data.date.toISOString()}>{formatDate(post.data.date)}</time>
+        <span class="post-open" aria-hidden="true">↗</span>
+      </a></li>
+    ))}
+  </ol>
+</PublicationLayout>

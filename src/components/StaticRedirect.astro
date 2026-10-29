@@ -1,0 +1,23 @@
+---
+interface Props { target: string; title?: string; }
+const { target, title = 'Page moved' } = Astro.props;
+const destination = new URL(target, Astro.site).href;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta http-equiv="refresh" content={`0;url=${destination}`} />
+    <link rel="canonical" href={destination} />
+    <title>{title}</title>
+    <script is:inline define:vars={{ destination }}>
+      const target = new URL(destination);
+      if (!target.hash) target.hash = window.location.hash;
+      window.location.replace(target.href);
+    </script>
+  </head>
+  <body>
+    <main><h1>{title}</h1><p>Continue to <a href={destination}>{destination}</a>.</p></main>
+  </body>
+</html>

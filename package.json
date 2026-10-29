@@ -8,7 +8,11 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "check": "astro check"
+    "check": "astro check",
+    "dev:publication": "astro dev --config astro.publication.config.mjs",
+    "build:publication": "astro build --config astro.publication.config.mjs",
+    "preview:publication": "astro preview --config astro.publication.config.mjs",
+    "check:publication": "astro check --config astro.publication.config.mjs"
   },
   "dependencies": {
     "@astrojs/markdown-remark": "7.3.1",

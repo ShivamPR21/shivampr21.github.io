@@ -17,6 +17,9 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      PUBLIC_PUBLICATION_ACTIVE: ${{ vars.PUBLIC_PUBLICATION_ACTIVE || 'false' }}
+      PUBLIC_PUBLICATION_ORIGIN: ${{ vars.PUBLIC_PUBLICATION_ORIGIN || 'https://immortal-machine.github.io' }}
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6

@@ -1,0 +1,19 @@
+---
+import { PERSONAL_ORIGIN } from '../../../src/lib/publication';
+const currentPath = Astro.url.pathname;
+const nav = [
+  { href: '/writing/', label: 'Writing' },
+  { href: '/#foundations', label: 'Foundations' },
+  { href: '/#kernelized', label: 'KERNELIZED' },
+];
+---
+<header class="site-header">
+  <a class="identity" href="/" aria-label="Immortal Machine, home">
+    <span class="identity-mark" aria-hidden="true">IM</span>
+    <span class="identity-copy">Immortal Machine<small>A technical publication</small></span>
+  </a>
+  <nav aria-label="Primary navigation">
+    {nav.map((item) => <a href={item.href} aria-current={item.href === '/writing/' && currentPath.startsWith('/writing/') ? 'page' : undefined}>{item.label}</a>)}
+  </nav>
+  <a class="im-link" href={`${PERSONAL_ORIGIN}/about/`} aria-label="About Shivam Pandey">Shivam Pandey <span aria-hidden="true">↗</span></a>
+</header>

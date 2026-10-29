@@ -1,5 +1,6 @@
 import rss from '@astrojs/rss';
 import { getCollection } from 'astro:content';
+import { postUrl } from '../lib/publication';
 
 export async function GET(context) {
   const posts = (await getCollection('writing', ({ data }) => !data.draft)).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
@@ -11,7 +12,7 @@ export async function GET(context) {
       title: post.data.title,
       description: post.data.description,
       pubDate: post.data.date,
-      link: `/posts/${post.id}/`,
+      link: postUrl(post),
       categories: post.data.categories,
     })),
     customData: '<language>en-gb</language>',

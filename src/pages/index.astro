@@ -4,6 +4,7 @@ import PolicyField from '../components/PolicyField.astro';
 import ResearchTheme from '../components/ResearchTheme.astro';
 import { getCollection } from 'astro:content';
 import { researchThemes } from '../data/site';
+import { postHref, publicationHomeHref } from '../lib/publication';
 
 const latestPosts = (await getCollection('writing', ({ data }) => !data.draft)).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf() || (b.data.seriesOrder ?? 0) - (a.data.seriesOrder ?? 0)).slice(0, 3);
 ---
@@ -50,7 +51,7 @@ const latestPosts = (await getCollection('writing', ({ data }) => !data.draft)).
     <div class="section-heading"><p class="section-index">02 / Published material</p><h2>Follow the derivation.</h2></div>
     <div class="latest-grid">
       {latestPosts.map((post) => (
-        <a class="latest-note" href={`/posts/${post.id}/`}>
+        <a class="latest-note" href={postHref(post)}>
           <p>{post.data.series} / {String(post.data.seriesOrder ?? 0).padStart(2, '0')}</p>
           <h3>{post.data.title}</h3>
           <span>{post.data.description}</span>
@@ -65,6 +66,6 @@ const latestPosts = (await getCollection('writing', ({ data }) => !data.draft)).
     <p class="section-index">A publication by Shivam Pandey</p>
     <h2>IMMORTAL <em>MACHINE</em></h2>
     <p>Deeper essays, experiments, implementations, and research series—published once, connected back to the personal research practice.</p>
-    <a class="button button--primary" href="/immortal-machine/">Enter the publication</a>
+    <a class="button button--primary" href={publicationHomeHref()}>Enter the publication</a>
   </section>
 </BaseLayout>

@@ -2,6 +2,7 @@
 node_modules/
 .astro/
 dist/
+dist-publication/
 graphify-out/
 tmp/
 .DS_Store
@@ -168,3 +169,7 @@ cython_debug/
 
 /.quarto/
 /_site/
+
+# Authored site helpers are not Python build output.
+!src/lib/
+!src/lib/**

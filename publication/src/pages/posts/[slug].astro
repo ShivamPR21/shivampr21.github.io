@@ -1,0 +1,16 @@
+---
+import { getCollection, type CollectionEntry } from 'astro:content';
+import PublicationLayout from '../../layouts/PublicationLayout.astro';
+import ArticlePage from '../../../../src/components/ArticlePage.astro';
+import { isPublicationPost, postUrl } from '../../../../src/lib/publication';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('writing', ({ data }) => !data.draft);
+  return posts.filter(isPublicationPost).map((post) => ({ params: { slug: post.id }, props: { post } }));
+}
+interface Props { post: CollectionEntry<'writing'>; }
+const { post } = Astro.props;
+---
+<PublicationLayout title={post.data.title} description={post.data.description} image={post.data.image} article>
+  <ArticlePage post={post} canonical={postUrl(post, 'publication')} />
+</PublicationLayout>

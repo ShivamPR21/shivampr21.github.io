@@ -8,6 +8,9 @@ export default defineConfig({
   site: 'https://shivampr21.com',
   output: 'static',
   integrations: [mdx()],
+  vite: {
+    server: { allowedHosts: ['terminal.local'] },
+  },
   markdown: {
     processor: unified({
       remarkPlugins: [remarkMath],
